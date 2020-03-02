@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<XmlFileIo xmlns:ns="Infrastructure.Persistence.Xml.dll">
+  <Metadata>
+    <Version>1</Version>
+  </Metadata>
+  <Data>
+    <DoseNormSettings>
+      <NormSettings>
+        <Type>0</Type>
+        <RefValue>6160</RefValue>
+        <RefPercent>100</RefPercent>
+        <Default>true</Default>
+        <Mode>0</Mode>
+      </NormSettings>
+    </DoseNormSettings>
+  </Data>
+</XmlFileIo>
