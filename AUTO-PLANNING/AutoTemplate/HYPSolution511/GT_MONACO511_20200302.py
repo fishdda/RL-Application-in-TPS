@@ -1279,7 +1279,7 @@ class HYP_Editor_MONACO511:
                 OARs = OARs + cf2[:-1]
                 OARs.append('!END\n') 
                 
-            elif item == 'Pitutary':
+            elif item == 'Pitutary' or item == 'Pituitary':
                                  
                 part2[1] = '    name=' + item +'\n'    
                 
