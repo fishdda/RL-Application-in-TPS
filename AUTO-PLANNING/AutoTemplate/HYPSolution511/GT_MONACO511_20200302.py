@@ -12,7 +12,15 @@ class HYP_Editor_MONACO511:
        
     '''
     
-    def  __init__(self,hyp_element_path,protocol_xlsx,demo_xml_path,output_xml_path,contourname_path,NAMING_LIB,hyp_path_new,updated_template_path,new_contourname_path):
+    def  __init__(self,hyp_element_path,
+                       protocol_xlsx,
+                       demo_xml_path,
+                       output_xml_path,
+                       contourname_path,
+                       NAMING_LIB,
+                       hyp_path_new,
+                       updated_template_path,
+                       new_contourname_path):
         
         self.hypelement = hyp_element_path # hyp elements (including each parts)
         
@@ -81,7 +89,7 @@ class HYP_Editor_MONACO511:
         
         '''
         self.keyword = ['# Part1\n','# Part2\n','# Part3\n','# Part4_VMAT\n','# Part4_IMRT\n','# Part5\n',
-                        '# se\n','# pa\n','# qp\n','# oq\n','# mxd\n']
+                        '# se\n','# pa\n','# qp\n','# oq\n','# mxd\n','# conf\n']
         self.element = {}
         with open(self.hypelement,'r+') as f:
             
@@ -1570,7 +1578,7 @@ class HYP_Editor_MONACO511:
             # VMAT 360 ARC
             part4 = self.element['# Part4_VMAT\n'][:-1] 
         elif delivery_type == 'IMRT':
-            # IMRT 9beams 
+            # IMRT 9beams step&shoot
             part4 = self.element['# Part4_IMRT\n'][:-1]
         
         ## ============================ part5 ============================== ##
@@ -1578,11 +1586,15 @@ class HYP_Editor_MONACO511:
         for i,item in enumerate(part5):
             if 'FRACTIONS' in item:
                 part5[i] = ''.join(['!FRACTIONS    ',str(fractions),'\n'])
+            
             elif 'PRESCRIPTION' in item:
                 part5[i] = ''.join(['!PRESCRIPTION    ',str(float(prescription_dose)),'\n'])
                 
             elif 'DOSEGRIDSIZE' in item:
                 part5[i] = ''.join(['!DOSEGRIDSIZE    ',str(float(grid)),'\n'])
+            
+#            elif 'MAXNARCS' in item:
+#                part5[i] = ''.join(['!MAXNARCS    ',str(float(ARCS)),'\n'])
         
         ## ================== template ==================== ##        
         self.template_line = self.template_line + part1 + target + OARs + part3 + part4 + part5
@@ -1593,7 +1605,359 @@ class HYP_Editor_MONACO511:
               
         
         return self.template_line   
+
+    def hyp_solution_NPC_V2(self,grid,fractions,prescription_dose,delivery_type):
+        
+        '''
+          This is another version of NPC model
+        '''
+        self.template_line = []
+        
+        # deal with target
+        tar = [(key,self.protocol_dict[key][0][1],
+                float(self.protocol_dict[key][0][0].split('V')[1].split('Gy')[0]))
+           for key in self.protocol_dict.keys() if 'PCTV' in key or 'PGTV' in key or 'GTV' in key]
+        tar.sort(key=lambda x:x[2],reverse = True)
+        tar_nam = [item[0] for item in tar]
+        
+        sorted_name = self.name_sorting()
+        OARs_nam = [item for item in sorted_name if item not in tar_nam and item in self.protocol_dict.keys()] + ['R6','R7']
+        prep_name = tar_nam + OARs_nam +['BODY']
+        OARs_nam = OARs_nam + ['BODY']
+              
+        ## ============================ part1 ============================== ##
+        part1 = ['000510b6\n','!LAYERING\n'] # Monaco5.11 serial number: 000510b6
+        for item in prep_name:
+            if item == 'patient' or item == 'BODY':
+                part1.append(str('    ' + item + '\n'))       
+            else:
+                part1.append(str('    ' + item + ':T\n'))
+                    
+        part1.append('!END\n')
+         
+        ## ============================ part2 ============================== ##   
+        part2 = self.element['# Part2\n'][:-1]  ## read template
+        target = []
+        OARs = []   
+        
+        # Target part
+        for i,item in enumerate(tar):
+            
+            if i != len(tar)-1:  ## inner target 
+                
+                part2[1] = '    name=' + item[0] +'\n'
+
+                # setting target penalty
+                tar_pen = self.modify_qp(Vol = item[1],Dose = item[2],Weight = 1.0,Opti_all = 1,Surf_margin = 0)
+                
+                # setting quadratic overdose
+                qod = self.modify_qod(Dose = int(item[2]+1.5),RMS = 0.25,Shrink_margin = 0)
+                
+                # combine them together
+                target = target + part2 + tar_pen[:-1] + qod[:-1]
+                target.append('!END\n')
+                
+            else:   ## external target
+                
+                part2[1] = '    name=' + item[0] +'\n'  
+                
+                # setting target penalty
+                tar_pen_ext = self.modify_qp(Vol = item[1],Dose = item[2],Weight = 1.0,Opti_all = 1,Surf_margin = 0)
+                target = target + part2 + tar_pen_ext[:-1]
+                
+                # first quadratic overdose to contrain inner target reigon to prevent hot dose release to low dose region
+                qod1 = self.modify_qod(Dose = tar[i-1][-1],RMS = 0.25,Shrink_margin = 0)
+                target = target + qod1[:-1]
+                
+                # second quadratic overdose to constarin 110% percent of external target dose region
+                qod2 = self.modify_qod(Dose = int(item[2]*1.1),RMS = 0.5,Shrink_margin = grid)
+                target = target + qod2[:-1]
+                
+                # third quadratic overdose to constrain 102% percent of external target dose region
+                qod3 = self.modify_qod(Dose = int(item[2]*1.02),RMS = 0.75,Shrink_margin = grid*2)
+                target = target + qod3[:-1]
+                
+                target.append('!END\n')
+        
+        # OARs part
+        for item in OARs_nam:
+            '''
+            
+            D_x_cc < y Gy => if x < 10, then two cost functions were added:
+                1. serial (k = 12, Isoconstraint(EUD) = 0.75*y)
+                2. maximum dose (isoconstraint = y)
+                
+            D_x_% < y Gy
+            
+            1. if  40% < x < 60%, then one cost function was added:
+                serial (k = 1, isocostraint = y)
+            2. if  20% < x < 40%, then one cost function was added:
+                serial (k = 8, isoconstraint = 0.95*y)
+            3. if  10% < x < 20%, then one cost function was added:
+                serial (k = 12, isoconstaraint = 0.85*y)
+            4. if  0% < x < 10%, then one cost function was added:
+                serial (k = 15, isoconstraint = 0.75*y)
+                
+            
+            '''
+            
+            if item == 'Brain Stem':
+                
+                part2[1] = '    name=' + item +'\n'
+                
+                # select the maximum value from protocol request and 0.8*prescription dose
+                max_dose = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),
+                               0.8*tar[0][-1])
+                
+                # select CF: maximum                
+                cf = self.modify_mxd(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+                
+            elif item == 'Spinal Cord':
+                                
+                part2[1] = '    name=' + item +'\n'                
+
+                # select the maximum value from protocol request and 0.75*prescription dose
+                max_dose = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),
+                               0.75*tar[0][-1])
+                
+                # select CF:maximum 
+                cf = self.modify_mxd(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')  
+                                
+            elif item == 'Optical Chiasm' or item == 'Optical Nerve L' or item == 'Optical Nerve R':
+                
+                part2[1] = '    name=' + item +'\n'                
+
+                # select the maximum value from protocol request and 0.75*prescription dose
+                max_dose = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),
+                               0.75*tar[0][-1])
+                
+                # select CF:maximum 
+                cf = self.modify_mxd(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')  
+
+            elif item == 'Lens R' or item == 'Lens L':
+                                 
+                part2[1] = '    name=' + item +'\n'                
+
+                # select the maximum value from protocol request
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                
+                # select CF:maximum
+                cf = self.modify_mxd(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')                  
+            
+            elif item == 'Eye R' or item == 'Eye L':
+                                 
+                part2[1] = '    name=' + item +'\n'                
+
+
+                if '%' in self.protocol_dict[item][0][0]:
+                    
+                    percent = float(self.protocol_dict[item][0][0].split('D')[1].split('%')[0])
+                    
+                    if percent < 10: 
+                                                
+                        # select CF: maximum
+                        max_dose =  float(self.protocol_dict[item][0][1].split('Gy')[0])
+                        cf = self.modify_mxd(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                        
+                    elif percent < 35:
+                        
+                        # select CF: serial
+                        eud_dose = 0.75*tar[0][-1]           
+                        cf = self.modify_se(Dose=int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=12)                       
+
+
+                elif 'cc' in self.protocol_dict[item][0][0]:
+                    
+                    vol = float(self.protocol_dict[item][0][0].split('D')[1].split('cc')[0])
+                    
+                    if vol < 10: 
+                                                
+                        # select CF: maximum
+                        max_dose =  float(self.protocol_dict[item][0][1].split('Gy')[0])
+                        cf = self.modify_mxd(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                        
+                    elif vol < 35:
+                        
+                        # select CF: serial
+                        eud_dose = 0.75*tar[0][-1]           
+                        cf = self.modify_se(Dose=int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=12)    
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')               
+
+            elif item == 'Parotid R' or item == 'Parotid L':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: serial (constrain high dose region)
+                eud_dose1 = 0.5*tar[0][-1]
+                cf1 = self.modify_se(Dose= eud_dose1,Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1]
+            
+                # select CF2: serial (constrain mean dose)
+                eud_dose2 = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf2 = self.modify_se(Dose= eud_dose2,Weight=0.01,Shrink_margin=0,Opti_all=1,Powe_Law=1) 
+                
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n')   
+
+            elif item == 'Oral Cavity':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: serial (constrain high dose region)
+                eud_dose = 0.65*tar[0][-1]
+                cf1 = self.modify_se(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1] 
+                
+                # select CF2: serial (constrain mean dose, eud = pro_dose+2Gy)
+                eud_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf2 = self.modify_se(Dose= int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=1) 
+
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n')         
+
+            elif item == 'Larynx':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: serial (constrain high dose region)
+                eud_dose = 0.65*tar[0][-1]
+                cf1 = self.modify_se(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1]
+            
+                # select CF2: parallel (constrain mean dose, eud = pro_dose+2Gy)
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf2 = self.modify_pa(Ref_dose= int(max_dose),Volume = 50, Weight=0.01,Powe_Law=4,Opti_all=1,Shrink_margin=0) 
+                
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n') 
+                
+            elif item == 'Pitutary' or item == 'Pituitary':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF: Parallel (constrain D50% and optimize all)
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf = self.modify_pa(Ref_dose= int(max_dose),Volume = 50, Weight=0.01,Powe_Law=4,Opti_all=1,Shrink_margin=0) 
+
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+
+            elif item == 'T.Lobe R' or item == 'T.Lobe L':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF: Serial (constrain high dose region)
+                eud_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf1 = self.modify_se(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')                 
+                               
+            elif item == 'Brain':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF: Maximum (Constrain D5%)
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf = self.modify_mxd(Dose= int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                        
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')                  
+                
+            elif item == 'Mandible':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: Quadratic Overdose(Constrain D2cc/Max Dose)
+                max_dose = tar[0][-1]
+                cf1 = self.modify_qod(Dose= int(max_dose),RMS = 0.25,Shrink_margin = 0) 
+                # cf1 = self.modify_mxd(Dose=max_dose,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                # cf1 = self.modify_se(Dose= max_dose*0.75,Weight=0.01,Shrink_margin=0.25,Opti_all=0,Powe_Law=12) 
+                OARs + part2 + cf1[:-1]
+                
+                # select CF1: Serial (Constrain D50% dose )
+                eud_dose = tar[0][-1]*0.6
+                cf2 = self.modify_se(Dose= int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=1)    
     
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n') 
+
+            elif item == 'A.D L' or item == 'A.D R' or item == 'T.Joint R' or item == 'T.Joint L':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Parallel (Constrain D50% dose )
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf = self.modify_pa(Ref_dose= int(max_dose),Volume = 50, Weight=0.01,Powe_Law=4,Opti_all=0,Shrink_margin=0)   
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')
+
+            elif item == 'Lung':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Serial (Constrain high dose )
+                eud_dose = tar[0][-1]*0.6
+                cf = self.modify_se(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')  
+
+            # assistance structure like SPPRV,BSPRV,R6,R7
+            elif item == 'SPPRV':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = tar[-1][-1]*0.6
+                cf = self.modify_mxd(Dose= int(max_dose), Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+
+            elif item == 'BSPRV':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = tar[-1][-1]*0.7
+                cf = self.modify_mxd(Dose= int(max_dose), Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+
+            elif item == 'R6' or item == 'R7':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = tar[-1][-1]*0.7
+                cf = self.modify_mxd(Dose= int(max_dose), Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')
+
+        
+    def hyp_solution_Prostate_V1(self,grid,fractions,prescription_dose,delivery_type):
+        
+        return 1
+        
+          
 
     def initial(self,struct,struct_set,path_beam,selection):
     
@@ -1655,198 +2019,130 @@ class HYP_Editor_MONACO511:
         self.write_colone(template)
         
         return self.strt_ind_list,self.tras
+
+
+class HYP_Editor_MONACO559a:
     
-
-
-
-class XML_Editor:
     '''
-        This class mainly used to generate an isodose.xml in Monaco 5.5 for 
-        DVH Statistics Columns 
-        
-        e.g. 
-        (Dmin > 60Gy) <-> ('GoalType' = 1, 'Dose = 6000', 'Volume = -1') -- Minimum dose
-        (Dmax < 70Gy) <-> ('GoalType' = 2, 'Dose = 7000', 'Volume = -1') -- Maximum Dose
-        (Dmean > 45Gy) -> ('GoalType' = 3, 'Dose = 4500', 'Volume = -1') -- Mean Dose(Lower Limit)
-        (Dmean < 65Gy) -> ('GoalType' = 4, 'Dose = 6500', 'Volume = -1') -- Mean Dose(Upper Limit)
-        (D50% > 50Gy) -> ('GoalType' = 5, 'Dose = 5000', 'Volume = 50') -- Minimum Dose Received by Relative Volume
-        (D100cc > 50Gy) -> ('GoalType' = 6, 'Dose = 5000', 'Volume = 100000') -- Minimum Dose Received by Absolute Volume
-        (D50% < 50Gy) -> ('GoalType' = 7, 'Dose = 5000', 'Volume = 50') -- Maximum Dose Received by Relative Volume
-        (D100cc < 50Gy) -> ('GoalType' = 8, 'Dose = 5000', 'Volume = 100000') -- Maximum Dose Received by Absolute Volume
-        (V50Gy > 100%) -> ('GoalType' = 9, 'Dose = 5000', 'Volume = 100') -- Minimum Relative Volume That Receives Dose
-        (V50Gy > 100cc) -> ('GoalType' = 10, 'Dose = 5000', 'Volume = 1000000') -- Minimum Absolute Volume That Receives Dose
-        (V50Gy < 50%) -> ('GoalType' = 11, 'Dose = 5000', 'Volume = 50') -- Maximum Relative Volume That Receives Dose
-        (V50Gy < 100cc) -> ('GoalType' = 12, 'Dose = 5000', 'Volume = 1000000') -- Maximum Absolute Volume That Receives Dose
-        
-        
+       This class was used to generate an initial template for Monaco 5.59a TPS
+    
     '''
     
-    def  __init__(self,demo_xml_path,output_xml_path,protocol_xlsx):
+    def __init__(self):
         
-        self.demo_xml_path = demo_xml_path
-        self.ouput_xml_path = output_xml_path
-        self.xlsx = protocol_xlsx
- 
-    def extract_xlsx(self):
-        '''
-          To extract data from protocol.xlsx for protocol_dict
-        '''
-        import pandas as pd
-        protocol = pd.read_excel(self.xlsx, sheet_name=pt_id,header=None)
-        
-        protocol_list = [[protocol[0][i],protocol[1][i],protocol[2][i]] for i in range(protocol.shape[0])]
-        name_set = set([item[0] for item in protocol_list if item[0] != 'frac' and item[0] != 'prep'])
-            
-        protocol_dict = {name : [] for name in name_set} 
-        for item in protocol_list:
-            if item[0] != 'frac' and item[0] != 'prep':
-                protocol_dict[item[0]].append([item[1],item[2]])
-                
-        for key in protocol_dict.keys():
-            for i,item in enumerate(protocol_dict[key]):
-                if 'D' in item[0] and 'cc' in item[0]:
-                    protocol_dict[key][i].append('8')
-                elif 'D' in item[0] and '%' in item[0]:
-                    protocol_dict[key][i].append('7')
-                elif 'V' in item[0] and 'Gy' in item[0]:
-                    protocol_dict[key][i].append('9')
-                
-        return protocol_dict
+        return 1
 
-    def pretty_xml(self,element, indent, newline, level=0): 
-        '''
-        # elemnt为传进来的Elment类，参数indent用于缩进，newline用于换行
-        to genereate a beautiful xml with tab
-        '''
-        if element:  # 判断element是否有子元素    
-            if (element.text is None) or element.text.isspace():  # 如果element的text没有内容
-                element.text = newline + indent * (level + 1)
-            else:
-                element.text = newline + indent * (level + 1) + element.text.strip() + newline + indent * (level + 1)
-                # else:  # 此处两行如果把注释去掉，Element的text也会另起一行
-                # element.text = newline + indent * (level + 1) + element.text.strip() + newline + indent * level
-        temp = list(element)  # 将element转成list
-        for subelement in temp:
-            if temp.index(subelement) < (len(temp) - 1):  # 如果不是list的最后一个元素，说明下一个行是同级别元素的起始，缩进应一致
-                subelement.tail = newline + indent * (level + 1)
-            else:  # 如果是list的最后一个元素， 说明下一行是母元素的结束，缩进应该少一个    
-                subelement.tail = newline + indent * level
-            self.pretty_xml(subelement, indent, newline, level=level + 1)  # 对子元素进行递归操作
-
-       
-                                
-#    def xml_solution(self):
-#        '''
-#           This function was used for extracting xml file and try to combine with protocol 
-#           to generate xml together.
-#           
-#        '''
-#        from lxml import etree as et
-#
-##        demo_xml_path = 'C:/Users/xhuae08006/Desktop/XHTOMO_AUTO/Modifier/demo_dosenormsettings.xml'
-#        parser = et.XMLParser(encoding="utf-8", remove_blank_text=True)
-#        tree = et.parse(self.demo_xml_path,parser=parser)
-#        root1 = tree.getroot()
-#        protocol_dict = extract_xlsx()
-#        
-#        
-#        for child in root1[1]:
-#        #    print(child.tag, child.attrib)
-#            for subchild in child.findall('DoseStructureParametersList'):
-#                for i,strname in enumerate(name): # subchild -> DoseStructureParametersList, 16 means the number of structures
-#                    et.SubElement(subchild, 'DoseStructureParameter')
-#                    et.SubElement(subchild[i],'StructureName').text = strname
-#                    et.SubElement(subchild[i],'Enabled').text = '-1'
-#                    et.SubElement(subchild[i],'HighDoseRef').text ='5'
-#                    et.SubElement(subchild[i],'MinDoseRef').text = '95'
-#                    et.SubElement(subchild[i],'PrescribedDose').text = '-1'
-#                    et.SubElement(subchild[i],'RefDoseList')
-#                    et.SubElement(subchild[i],'DoseGoalList')
-#                    
-#                    if strname in protocol_dict.keys():
-#                        print('OK')
-#                        for subsubchild in subchild[i].findall('DoseGoalList'):
-#                            print(subsubchild)
-#                            for k in range(len(protocol_dict[strname])):
-#                                et.SubElement(subsubchild,'DoseGoal')
-#                                et.SubElement(subsubchild[k],'GoalType').text = protocol_dict[strname][k][-1]
-#                                if protocol_dict[strname][k][-1] == '9':
-#                                    et.SubElement(subsubchild[k],'Dose').text = str(float(protocol_dict[strname][k][0].split('Gy')[0].split('V')[1])*100)
-#                                else:    
-#                                    et.SubElement(subsubchild[k],'Dose').text = str(float(protocol_dict[strname][k][1].split('Gy')[0])*100)
-#                                if protocol_dict[strname][k][-1] == '8':
-#                                    et.SubElement(subsubchild[k],'Volume').text = str(float(protocol_dict[strname][k][0].split('cc')[0].split('D')[1])*1000)
-#                                elif protocol_dict[strname][k][-1] == '7':
-#                                    et.SubElement(subsubchild[k],'Volume').text = protocol_dict[strname][k][0].split('%')[0].split('D')[1]
-#                                elif protocol_dict[strname][k][-1] == '9':
-#                                    et.SubElement(subsubchild[k],'Volume').text = str(protocol_dict[strname][k][1]*100)
-#                                et.SubElement(subsubchild[k],'Tolerance').text = '0'
-#                                
-#                    else:
-#                        print('Flase')
-#                        for subsubchild in subchild[i].findall('RefDoseList'):
-#                            et.SubElement(subsubchild,'RefDose')
-#                            et.SubElement(subsubchild[k],'RefType').text = '0'
-#                            et.SubElement(subsubchild[k],'RefValue').text = '-1'  
-#        
-##        xml_path_output = 'C:/Users/xhuae08006/Desktop/XHTOMO_AUTO/Modifier/test_dosenormsettings.xml'
-#        self.pretty_xml(root1, '  ', '\n')  # 执行美化方法
-#        tree.write(self.ouput_xml_path,pretty_print = True,encoding="utf-8",standalone ="yes", xml_declaration = True)
-#        
-#        print('Done!')
+class HYP_Editor_MONACO600:
     
-    def modify_MONACO_contournames(self):
-        
-        '''read contournames file from FocalData to 
-        extract the structure names of CT '''
-    
-        #contour_path = 'C:/Users/Public/Documents/CMS/FocalData/Installation/5~Clinc_XH/1~003/1~CT1/contournames'
-        with open(self.contour_path, "r+") as f:
-            line = f.readlines()
-        
-        self.name = [line[2+i*18].split('\n')[0] for i in range(int(len(line)/18))]
-        
-        
-        
-        
-        return self.name    
-    
-class NAME_Deal():
     '''
-       This class aims to solve following issues:
-           1. names order in .hyp file which would be a big issue for optimization
-           2. structure name inconsistency between contournames and names in treatment protocol
-           3. how to standardize
+       This class was used to generate an initial template for Monaco 6.00 TPS
+    
     '''
     
-    def  __init__(self,contour_path,csv_file,colone_path):
+    def __init__(self):
         
-        self.contour_path = contour_path
-        self.csv = csv_file
-        self.col = colone_path   
-    
+        return 1
 
+
+
+class Initialization(HYP_Editor_MONACO511):    
     
-    def modify_MONACO_nameorders(self):
+    '''
+       This class save all the initialization parameters for generation
+    '''
+    
+    def __init__(self,pt_id,
+                      delivery_method,
+                      fx,
+                      prep_dose,
+                      grid_dose,
+                      path,
+                      protocol_xlsx):
+        import os
         
+        self.pt_id = pt_id
+        self.delivery_method = delivery_method
+        self.fx = fx
+        self.prep_dose = prep_dose
+        self.grid_dose = grid_dose
+        self.protocol_xlsx = protocol_xlsx
+        # original template folder and file path
+        hyp_element_path = os.path.join(path,'hyp_element511.txt')
+        demo_xml_path = os.path.join(path,'demo_dosenormsettings.xml')
+        self.absolute_path = os.path.join(path,'remaining4files')
+
+        # updated new template folder and file path
+        self.updated_template_path = os.path.join(path,self.pt_id)
+        updated_template_path2 = os.path.join(path,self.pt_id)
+        output_xml_path = os.path.join(self.updated_template_path,self.pt_id+self.delivery_method+'.dosenormsettings.xml')
+        hyp_path_new = os.path.join(self.updated_template_path,self.pt_id+self.delivery_method+'.hyp')
+
+
+        # once ct image was loaded, check the structure name with protocol
+        contourname_path = 'C:/Users/Public/Documents/CMS/FocalData/Installation/5~Clinc_XH/1~'+ self.pt_id + '/1~CT1/contournames'
+        new_contourname_path = 'C:/Users/Public/Documents/CMS/FocalData/Installation/5~Clinc_XH/1~'+ self.pt_id + '/1~CT1/contournames1'
+        NAMING_LIB = {'TARGET_NAME_LIB':{'gtv','ctv','ptv','pgtv','pctv'},
+                      'OARs_NAME_LIB_HN':
+                          {'Level1':{'spinal cord','brain stem','stem','cord','prv','prv bs','scprv','prv sc'},
+                           'Level2':{'optical nerve r','optical nerve l','optical nerve',
+                                     'lens r','lens l','lens',
+                                     'eye r','eye l','eye',
+                                     'brain','optical chiasm'
+                                     }}}
+
+
+        HYP_Editor_MONACO511.__init__(self,hyp_element_path,
+                                                     protocol_xlsx,
+                                                     demo_xml_path,
+                                                     output_xml_path,
+                                                     contourname_path,
+                                                     NAMING_LIB,
+                                                     hyp_path_new,
+                                                     updated_template_path2,
+                                                     new_contourname_path)
+        
+    def MAIN_GENERATE(self,LABEL):
         '''
-           This function was used to rearrange the 
-           name orders of protocol_dict to ensure 
-           the name orders in hyp is correct
+        Main function for generate template
         '''
-         
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+        
+        from shutil import copyfile
+        import os
+        
+        HYP_Editor_MONACO511.mkdir(self)
+        # read protocol to dict
+        self.protocol_dict = HYP_Editor_MONACO511.extract_xlsx(self,self.pt_id)
+        
+        # read hyp elements into RAM
+        self.ele = HYP_Editor_MONACO511.Read_HYP_element(self)
+        #print(ele)
+        
+        # generate new hyp file
+        if LABEL == 'NPC':
+            self.updated_template = HYP_Editor_MONACO511.hyp_solution_NPC_V1(self,
+                                                             grid=self.grid_dose,
+                                                             fractions=self.fx,
+                                                             prescription_dose=self.prep_dose,
+                                                             delivery_type=self.delivery_method)
+        elif LABEL == 'Prostate':
+            self.updated_template = HYP_Editor_MONACO511.hyp_solution_Prostate_V1(self,
+                                                             grid=self.grid_dose,
+                                                             fractions=self.fx,
+                                                             prescription_dose=self.prep_dose,
+                                                             delivery_type=self.delivery_method)            
+        
+        HYP_Editor_MONACO511.write_colone(self)
+        
+        # generate new xml file
+        HYP_Editor_MONACO511.xml_solution(self,list(self.protocol_dict.keys()))
+        
+        # remaining task: copy the remaining 4 files into new template folder
+        # X.PLN, X.TEL, X.isodosesettings, X.dvhparam
+        
+        copyfile(os.path.join(self.absolute_path,self.delivery_method,'5.11.isodosesettings.xml'), os.path.join(self.updated_template_path,self.pt_id+self.delivery_method+'.isodosesettings.xml'))
+        copyfile(os.path.join(self.absolute_path,self.delivery_method,'5.11.dvhparam.xml'), os.path.join(self.updated_template_path,self.pt_id+self.delivery_method+'.dvhparam.xml'))
+        copyfile(os.path.join(self.absolute_path,self.delivery_method,'5.11.PLN'), os.path.join(self.updated_template_path,self.pt_id+self.delivery_method+'.pln'))
+        copyfile(os.path.join(self.absolute_path,self.delivery_method,'5.11.TEL'), os.path.join(self.updated_template_path,self.pt_id+self.delivery_method+'.tel'))
+
     
     
