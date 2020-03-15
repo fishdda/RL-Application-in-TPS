@@ -1,0 +1,421 @@
+# Part1
+000610b6
+!LAYERING
+    PGTVprn:T
+    PGTVnx:T
+    PGTVnd:T
+    PCTV:T
+    Optical chiasm:T
+    Brain Stem:T
+    Spinal Cord:T
+    Optical Nerve R:T
+    Optical Nerve L:T
+    Lens L:T
+    Lens R:T
+    L eye:T
+    R eye:T
+    Brain:T
+    Larynx:T
+    Parotid L:T
+    Parotid R:T
+    T joint L:T
+    T joint R:T
+    T Loble L:T
+    T Loble R:T
+    A Duct L:T
+    A Duct R:T
+    Mandible:T
+    Oral Cavity:T
+    Lung:T
+    BODY
+!END
+
+# Part2
+!VOIDEF
+    name=PGTVnx6996
+    storenodose=0
+    conformalavoidance=0
+    
+# Part3
+!DOSE_ENGINES
+    PB=e1    machinename=linac.rpb
+    MC=e2    machinename=linac.bdt
+    CC=CC_id    machinename=CC_machine
+    EM=oemc    machinename=oemc_mod
+!END
+!MOD_EQUIPMENT
+    minMU=4
+    targetDoseRate=3.3333333333333335
+    size=10x3
+!END
+
+# Part4_VMAT
+!BEAMS
+    !BEAMDEF
+        description=1
+        primary=e1
+        secondary=e2
+        conformalRT=0
+        dynamiccollimators=1
+        hadron=0
+        arc=360
+        arcincrement=30
+        gantry=180
+        couch=0
+        collimator=0
+    !END
+!END
+
+# Part4_IMRT
+!BEAMS
+    !BEAMDEF
+        description=1
+        primary=e1
+        secondary=e2
+        conformalRT=0
+        dynamiccollimators=0
+        hadron=0
+        arc=0
+        arcincrement=0
+        gantry=0
+        couch=0
+        collimator=0
+    !END
+    !BEAMDEF
+        description=2
+        primary=e1
+        secondary=e2
+        conformalRT=0
+        dynamiccollimators=0
+        hadron=0
+        arc=0
+        arcincrement=0
+        gantry=40
+        couch=0
+        collimator=0
+    !END
+    !BEAMDEF
+        description=3
+        primary=e1
+        secondary=e2
+        conformalRT=0
+        dynamiccollimators=0
+        hadron=0
+        arc=0
+        arcincrement=0
+        gantry=80
+        couch=0
+        collimator=0
+    !END
+    !BEAMDEF
+        description=4
+        primary=e1
+        secondary=e2
+        conformalRT=0
+        dynamiccollimators=0
+        hadron=0
+        arc=0
+        arcincrement=0
+        gantry=120
+        couch=0
+        collimator=0
+    !END
+    !BEAMDEF
+        description=5
+        primary=e1
+        secondary=e2
+        conformalRT=0
+        dynamiccollimators=0
+        hadron=0
+        arc=0
+        arcincrement=0
+        gantry=160
+        couch=0
+        collimator=0
+    !END
+    !BEAMDEF
+        description=6
+        primary=e1
+        secondary=e2
+        conformalRT=0
+        dynamiccollimators=0
+        hadron=0
+        arc=0
+        arcincrement=0
+        gantry=200
+        couch=0
+        collimator=0
+    !END
+    !BEAMDEF
+        description=7
+        primary=e1
+        secondary=e2
+        conformalRT=0
+        dynamiccollimators=0
+        hadron=0
+        arc=0
+        arcincrement=0
+        gantry=240
+        couch=0
+        collimator=0
+    !END
+    !BEAMDEF
+        description=8
+        primary=e1
+        secondary=e2
+        conformalRT=0
+        dynamiccollimators=0
+        hadron=0
+        arc=0
+        arcincrement=0
+        gantry=280
+        couch=0
+        collimator=0
+    !END
+    !BEAMDEF
+        description=9
+        primary=e1
+        secondary=e2
+        conformalRT=0
+        dynamiccollimators=0
+        hadron=0
+        arc=0
+        arcincrement=0
+        gantry=320
+        couch=0
+        collimator=0
+    !END
+!END
+
+# Part5
+!FRACTIONS    28
+!PRESCRIPTION    61.600000000000001
+!MINHOUNSFIELDINVOI    -200
+!MINDENSINVOI    1
+!DOSEGRIDSIZE    2.5
+!MINFIELDSIZE    200
+!MINAREADIFFERENCE    0
+!GRADEOFSMOOTHING    Medium
+!HIDELEAFGAP    0
+!SURFACEMARGIN    3
+!AUTOFLASHMARGIN    2
+!MCVARPERPLAN    1
+!MCSEGMENTVARIANCE    0.0050000000000000001
+!MCVARIANCE    0.0050000000000000001
+!DOSETOMEDIUM    1
+!FORCEWATER    0
+!STORECOUCHCOILDOSE    0
+!ISOCENTRE    coordinate=6.2000000000000002, -137, -56
+!PARETOMODE    0
+!SHAPEOPTIMIZATION    1
+!CFSHAPEOPTIMIZATION    0
+!CONSTDOSERATE    0
+!DMLCMAXCP    30
+!VMATMAXCP    180
+!MAXSWEEPEFFICIENCY    1
+!MINWIDTH    10
+!MAXCPFORSTATIC    250
+!TARGETEDGE    Normal
+!AVOIDANCEEDGE    Normal
+!MAXNARCS    2
+!FORCEBEAMSTOPS    1
+!MINMUPERCP    2
+!NUMBEROFHISTORIES    50000
+!PROTON_PB_APPLY_NUCLEAR_SCATTERING    1
+!PROTON_PB_SPOT_DECOMPOSITION    1
+!PROTON_MC_RELATIVE_DOSE_THRESHOLD    5
+!PROTON_MC_PARTICLES_PER_SPOT    10000000
+!PROTON_MC_UNCERTAINTY_PER_SPOT    1
+!PILOT_BEAMLETS    1
+!MAX_SHAPE_LOOPS    5
+!PROTON_OPT_TOLERANCE    0.0001
+!PROTON_OPT_MAX_ITERATIONS    200
+!PROTON_BEAM_DOSE_UNIFORMITY_WEIGHT    4
+!PROTON_USE_UNIFORMITY_FOR_IMPT    0
+!IDOSE_RBE_MODEL_ID    
+!IDOSE_NUCLEAR_INTERACTION    0
+!IDOSE_SPOT_MODE    1
+!IDOSE_CALC_ALGO    4
+!CS_KERNEL_GENERATION_PRECISION    3
+!CS_FINAL_CALCULATION_PRECISION    3
+!ISPHANTOMMATERIAL    1
+!MC_THRESHOLD_OBJ    0
+
+# se
+    !COSTFUNCTION
+        type=se
+        usedensity=0
+        effectweighting=0
+        totalvolume=0
+        sanesurfacedose=0
+        multicriterial=0
+        relaxfirst=0
+        usebiasdose=1
+        alpha=0
+        beta_alpha=0
+        celldensity=0
+        refdose=100
+        functreserve=50
+        refvolume=0
+        exponent=12
+        thresholddose=1
+        isoconstraint=0
+        isoeffect=0
+        relativeimpact=0
+        status=1
+        manual=0
+        weight=0.01
+        groupmargins=0
+        applyshrinkmargintooars=0
+        oarsmargin=0
+    !END
+
+# pa
+    !COSTFUNCTION
+        type=pa
+        usedensity=0
+        effectweighting=0
+        totalvolume=0
+        sanesurfacedose=0
+        multicriterial=0
+        relaxfirst=0
+        usebiasdose=1
+        shrinkmargin=0
+        alpha=0
+        beta_alpha=0
+        celldensity=0
+        refdose=50
+        functreserve=50
+        refvolume=0
+        exponent=3
+        thresholddose=1
+        isoconstraint=30
+        isoeffect=0
+        relativeimpact=0
+        status=1
+        manual=0
+        weight=0.01
+        groupmargins=0
+        applyshrinkmargintooars=0
+        oarsmargin=0
+    !END
+
+# qp
+    !COSTFUNCTION
+        type=qp
+        usedensity=0
+        effectweighting=0
+        totalvolume=0
+        sanesurfacedose=1
+        multicriterial=0
+        relaxfirst=0
+        usebiasdose=1
+        shrinkmargin=0
+        alpha=0
+        beta_alpha=0
+        celldensity=0
+        refdose=0
+        functreserve=50
+        refvolume=0.98
+        exponent=1
+        thresholddose=1
+        isoconstraint=69.96
+        isoeffect=0
+        relativeimpact=0
+        status=1
+        manual=0
+        weight=1
+        groupmargins=0
+        applyshrinkmargintooars=0
+        oarsmargin=0
+    !END
+
+# oq
+    !COSTFUNCTION
+        type=o_q
+        usedensity=0
+        effectweighting=0
+        totalvolume=0
+        sanesurfacedose=0
+        multicriterial=0
+        relaxfirst=0
+        usebiasdose=1
+        shrinkmargin=0
+        alpha=0
+        beta_alpha=0
+        celldensity=0
+        refdose=0
+        functreserve=50
+        refvolume=0
+        exponent=1
+        thresholddose=30
+        isoconstraint=1
+        isoeffect=0
+        relativeimpact=0
+        status=1
+        manual=0
+        weight=0.01
+        groupmargins=0
+        applyshrinkmargintooars=0
+        oarsmargin=0
+    !END
+
+# mxd
+    !COSTFUNCTION
+        type=mxd
+        usedensity=0
+        effectweighting=0
+        totalvolume=1
+        sanesurfacedose=0
+        multicriterial=0
+        relaxfirst=0
+        usebiasdose=1
+        shrinkmargin=0
+        alpha=0
+        beta_alpha=0
+        celldensity=0
+        refdose=0
+        functreserve=50
+        refvolume=0
+        exponent=1
+        thresholddose=1
+        isoconstraint=75
+        isoeffect=0
+        relativeimpact=0
+        status=1
+        manual=0
+        weight=0.01
+        groupmargins=0
+        applyshrinkmargintooars=0
+        oarsmargin=0
+    !END
+
+# conf
+    !COSTFUNCTION
+        type=conf
+        usedensity=0
+        effectweighting=0
+        totalvolume=0
+        sanesurfacedose=0
+        multicriterial=0
+        relaxfirst=0
+        usebiasdose=1
+        shrinkmargin=0
+        alpha=0
+        beta_alpha=0
+        celldensity=0
+        refdose=100
+        functreserve=50
+        refvolume=0
+        exponent=5
+        thresholddose=1
+        isoconstraint=0.75
+        isoeffect=0
+        relativeimpact=0
+        status=1
+        manual=0
+        weight=0.01
+        groupmargins=0
+        applyshrinkmargintooars=0
+        oarsmargin=0
+    !END
