@@ -89,7 +89,7 @@ class HYP_Editor_MONACO551:
         
         '''
         self.keyword = ['# Part1\n','# Part2\n','# Part3\n','# Part4_VMAT\n','# Part4_IMRT\n','# Part5\n',
-                        '# se\n','# pa\n','# qp\n','# oq\n','# mxd\n','# conf\n']
+                        '# se\n','# pa\n','# qp\n','# oq\n','# mxd\n','# conf\n','# po\n','# ov\n','# uv\n']
         self.element = {}
         with open(self.hypelement,'r+') as f:
             
@@ -352,6 +352,35 @@ class HYP_Editor_MONACO551:
             elif item[2] > 16 and item[2] < 24:
                 self.level_OARs[item[0]] = 3
         return self.level_OARs
+
+    def modify_conf_551(self,Opti_all,isoconstraint):
+        '''
+           This function is conformality
+        '''
+        # initialization of cost functions
+        self.element = self.Read_HYP_element()
+        
+        if Opti_all == 1:
+            
+            for i,item in enumerate(self.element['# conf\n']):
+                                 
+                if item.split('=')[0] == '        isoconstraint':
+                    self.element['# conf\n'][i] = ''.join(['        isoconstraint=',str(isoconstraint),'\n'])
+                                
+                elif item.split('=')[0] == '        totalvolume':
+                    self.element['# conf\n'][i] = ''.join(['        totalvolume=',str(Opti_all),'\n'])
+
+        else:
+            
+            for i,item in enumerate(self.element['# conf\n']):
+                                 
+                if item.split('=')[0] == '        isoconstraint':
+                    self.element['# conf\n'][i] = ''.join(['        isoconstraint=',str(isoconstraint),'\n'])
+                                
+                elif item.split('=')[0] == '        totalvolume':
+                    self.element['# conf\n'][i] = ''.join(['        totalvolume=',str(1-Opti_all),'\n'])
+
+        return self.element['# conf\n']
     
     def modify_qp_551(self,Vol,Dose,Weight,Opti_all,Surf_margin):
         '''
@@ -510,7 +539,7 @@ class HYP_Editor_MONACO551:
     def modify_mxd_551(self,Dose,Weight,Opti_all,Shrink_margin):
         
         '''
-           Maximum Dose
+           Maximum Dose function 
 
         '''
         
@@ -534,7 +563,7 @@ class HYP_Editor_MONACO551:
         else:
             # means should shrink for each PTV
  
-            for i,item in enumerate(self.element['# oq\n']):
+            for i,item in enumerate(self.element['# mxd\n']):
                 
                 if item.split('=')[0] == '        isoconstraint':
                     self.element['# mxd\n'][i] = ''.join(['        isoconstraint=',str(Dose),'\n' ])   
@@ -650,7 +679,7 @@ class HYP_Editor_MONACO551:
                   
                         for j,jtem in enumerate(list(reversed(tar_name))):
                             
-                            Shrink_margin = math.floor(abs(self.tar[ind-1-j][-1]-Dose))
+                            Shrink_margin = round(abs(self.tar[ind-1-j][-1]-Dose)*0.5,1)
                             print(Shrink_margin)
                             self.element['# oq\n'].insert(i+1,'        !END\n')
                             self.element['# oq\n'].insert(i+1,'            targetmargin='+str(Shrink_margin)+'\n') 
@@ -692,7 +721,7 @@ class HYP_Editor_MONACO551:
                   
                         for j,jtem in enumerate(list(reversed(self.tar_nam))):
                             
-                            Shrink_margin = math.floor(abs(self.tar[3-j][-1]-Dose))
+                            Shrink_margin = math.floor(abs(self.tar[3-j][-1]-Dose)/2)
                             self.element['# oq\n'].insert(i+1,'        !END\n')
                             self.element['# oq\n'].insert(i+1,'            targetmargin='+str(Shrink_margin)+'\n') 
                             self.element['# oq\n'].insert(i+1,'            shrinkmargintarget='+jtem+'\n')             
@@ -700,6 +729,107 @@ class HYP_Editor_MONACO551:
                              
         return self.element['# oq\n']
 
+    def modify_ov_551(self,Ref_dose,Volume,Weight,Shrink_margin,Opti_all):
+    
+        '''
+           Overdose DVH function
+        '''
+        # initialization of cost functions
+        self.element = self.Read_HYP_element()
+        
+        if Opti_all == 1:
+        
+            for i,item in enumerate(self.element['# ov\n']):
+                
+                if item.split('=')[0] == '        isoconstraint':
+                    self.element['# ov\n'][i] = ''.join(['        isoconstraint=',str(Volume),'\n'])
+                                 
+                elif item.split('=')[0] == '        weight':
+                    self.element['# ov\n'][i] = ''.join(['        weight=',str(Weight),'\n'])
+                                 
+                elif item.split('=')[0] == '        thresholddose':
+                    self.element['# ov\n'][i] = ''.join(['        thresholddose=',str(Ref_dose),'\n'])
+
+                elif item.split('=')[0] == '        applyshrinkmargintooars':
+                    self.element['# ov\n'][i] = ''.join(['        applyshrinkmargintooars=',str(1-Opti_all),'\n'])
+                                 
+        else:
+            
+            for i,item in enumerate(self.element['# ov\n']):
+                
+                if item.split('=')[0] == '        isoconstraint':
+                    self.element['# ov\n'][i] = ''.join(['        isoconstraint=',str(Volume),'\n'])
+                                 
+                elif item.split('=')[0] == '        weight':
+                    self.element['# ov\n'][i] = ''.join(['        weight=',str(Weight),'\n'])
+                                 
+                elif item.split('=')[0] == '        thresholddose':
+                    self.element['# ov\n'][i] = ''.join(['        thresholddose=',str(Ref_dose),'\n'])
+
+                elif item.split('=')[0] == '        applyshrinkmargintooars':
+                    self.element['# ov\n'][i] = ''.join(['        applyshrinkmargintooars=',str(1-Opti_all),'\n'])    
+                                 
+                elif item.split('=')[0] == '        groupmargins':
+              
+                    for j,jtem in enumerate(list(reversed(self.tar_nam))):
+                        
+                        self.element['# ov\n'].insert(i+1,'        !END\n')
+                        self.element['# ov\n'].insert(i+1,'            targetmargin='+str(Shrink_margin)+'\n') 
+                        self.element['# ov\n'].insert(i+1,'            shrinkmargintarget='+jtem+'\n')             
+                        self.element['# ov\n'].insert(i+1,'        !SHRINKMARGINTARGET\n')      
+
+        return self.element['# ov\n']
+
+    def modify_uv_551(self,Ref_dose,Volume,Weight,Shrink_margin,Opti_all):
+    
+        '''
+           Underdose DVH function
+        '''
+        # initialization of cost functions
+        self.element = self.Read_HYP_element()
+        
+        if Opti_all == 1:
+        
+            for i,item in enumerate(self.element['# uv\n']):
+                
+                if item.split('=')[0] == '        isoconstraint':
+                    self.element['# uv\n'][i] = ''.join(['        isoconstraint=',str(Volume),'\n'])
+                                 
+                elif item.split('=')[0] == '        weight':
+                    self.element['# uv\n'][i] = ''.join(['        weight=',str(Weight),'\n'])
+                                 
+                elif item.split('=')[0] == '        thresholddose':
+                    self.element['# uv\n'][i] = ''.join(['        thresholddose=',str(Ref_dose),'\n'])
+
+                elif item.split('=')[0] == '        applyshrinkmargintooars':
+                    self.element['# uv\n'][i] = ''.join(['        applyshrinkmargintooars=',str(1-Opti_all),'\n'])
+                                 
+        else:
+            
+            for i,item in enumerate(self.element['# se\n']):
+                
+                if item.split('=')[0] == '        isoconstraint':
+                    self.element['# uv\n'][i] = ''.join(['        isoconstraint=',str(Volume),'\n'])
+                                 
+                elif item.split('=')[0] == '        weight':
+                    self.element['# uv\n'][i] = ''.join(['        weight=',str(Weight),'\n'])
+                                 
+                elif item.split('=')[0] == '        thresholddose':
+                    self.element['# uv\n'][i] = ''.join(['        thresholddose=',str(Ref_dose),'\n'])
+
+                elif item.split('=')[0] == '        applyshrinkmargintooars':
+                    self.element['# uv\n'][i] = ''.join(['        applyshrinkmargintooars=',str(1-Opti_all),'\n'])    
+                                 
+                elif item.split('=')[0] == '        groupmargins':
+              
+                    for j,jtem in enumerate(list(reversed(self.tar_nam))):
+                        
+                        self.element['# uv\n'].insert(i+1,'        !END\n')
+                        self.element['# uv\n'].insert(i+1,'            targetmargin='+str(Shrink_margin)+'\n') 
+                        self.element['# uv\n'].insert(i+1,'            shrinkmargintarget='+jtem+'\n')             
+                        self.element['# uv\n'].insert(i+1,'        !SHRINKMARGINTARGET\n')      
+
+        return self.element['# uv\n']
 
 
     def read_csv(self):
@@ -1890,7 +2020,7 @@ class HYP_Editor_MONACO551:
                 target = target + qod2[:-1]
                 
                 # third quadratic overdose to constrain 102% percent of external target dose region
-                qod3 = self.modify_qod_551(Dose = int(item[2]*1.02),RMS = 0.75,Shrink_margin = grid*3, Opti_all = 0,LABEL =[item[0],'TARGET'])
+                qod3 = self.modify_qod_551(Dose = int(item[2]*1.02),RMS = 1,Shrink_margin = grid*3, Opti_all = 0,LABEL =[item[0],'TARGET'])
                 target = target + qod3[:-1]
                 
                 target.append('!END\n')
@@ -1990,10 +2120,15 @@ class HYP_Editor_MONACO551:
                     elif percent < 35:
                         
                         # select CF: serial
-                        eud_dose = 0.75*self.tar[0][-1]           
+                        eud_dose = 0.8*self.tar[0][-1]           
                         cf = self.modify_se_551(Dose=int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=12)                       
 
-
+                    else:
+                        
+                        # select CF: serial
+                        eud_dose = 0.8*self.tar[0][-1]           
+                        cf = self.modify_se_551(Dose=int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=12)      
+                        
                 elif 'cc' in self.protocol_dict[item][0][0]:
                     
                     vol = float(self.protocol_dict[item][0][0].split('D')[1].split('cc')[0])
@@ -2005,6 +2140,12 @@ class HYP_Editor_MONACO551:
                         cf = self.modify_mxd_551(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
                         
                     elif vol < 35:
+                        
+                        # select CF: serial
+                        eud_dose = 0.75*self.tar[0][-1]           
+                        cf = self.modify_se_551(Dose=int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=12)    
+
+                    else:
                         
                         # select CF: serial
                         eud_dose = 0.75*self.tar[0][-1]           
@@ -2039,7 +2180,7 @@ class HYP_Editor_MONACO551:
                 OARs = OARs + part2 + cf1[:-1] 
                 
                 # select CF2: serial (constrain mean dose, eud = pro_dose+2Gy)
-                eud_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                eud_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])+2
                 cf2 = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=1) 
 
                 OARs = OARs + cf2[:-1]
@@ -2055,7 +2196,7 @@ class HYP_Editor_MONACO551:
                 OARs = OARs + part2 + cf1[:-1]
             
                 # select CF2: parallel (constrain mean dose, eud = pro_dose+2Gy)
-                eud_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                eud_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])+2
                 cf2 = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=1) 
                 
                 OARs = OARs + cf2[:-1]
@@ -2109,7 +2250,7 @@ class HYP_Editor_MONACO551:
                 OARs = OARs + part2 + cf1[:-1]
                 
                 # select CF1: Serial (Constrain D50% dose )
-                eud_dose = self.tar[0][-1]*0.65
+                eud_dose = max(self.tar[0][-1]*0.65,float(self.protocol_dict[item][0][1].split('Gy')[0]))
                 cf2 = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=1)    
     
                 OARs = OARs + cf2[:-1]
@@ -2132,7 +2273,7 @@ class HYP_Editor_MONACO551:
                 part2[1] = '    name=' + item +'\n'    
 
                 # select CF: Serial (Constrain high dose )
-                eud_dose = self.tar[0][-1]*0.6
+                eud_dose = max(self.tar[0][-1]*0.6,float(self.protocol_dict[item][0][1].split('Gy')[0]))
                 cf = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12)    
     
                 OARs = OARs + part2 + cf[:-1]
@@ -2171,6 +2312,852 @@ class HYP_Editor_MONACO551:
     
                 OARs = OARs + part2 + cf[:-1]
                 OARs.append('!END\n')
+
+            elif item == 'BODY' or item == 'Patient' or item == 'Body': ## patient
+                
+                part2[1] = '    name=' + item +'\n'
+                
+                ## global maximum dose
+                mxd1 = self.modify_mxd_551(Dose= int(self.tar[0][-1]*1.1), Weight=0.01, Opti_all=1, Shrink_margin=0)
+                OARs = OARs + part2 + mxd1[:-1]
+                
+                ## the outer target dose
+                QOD1 = self.modify_qod_551(Dose = int(self.tar[-1][-1]), RMS = 0.5, Shrink_margin = 0, Opti_all=0,LABEL =[item[0],'BODY'])
+                OARs = OARs + QOD1[:-1]
+                
+                QOD2 = self.modify_qod_551(Dose = int(self.tar[-1][-1])-5, RMS = 0.75, Shrink_margin = grid,Opti_all = 0,LABEL =[item[0],'BODY'])
+                OARs = OARs + QOD2[:-1]
+
+                QOD3 = self.modify_qod_551(Dose = int(self.tar[-1][-1])-10, RMS = 1, Shrink_margin = grid*2,Opti_all = 0,LABEL =[item[0],'BODY'])
+                OARs = OARs + QOD3[:-1]
+
+                QOD4 = self.modify_qod_551(Dose = int(self.tar[-1][-1])-15, RMS = 1.25, Shrink_margin = grid*3, Opti_all= 0,LABEL =[item[0],'BODY'])
+                OARs = OARs + QOD4[:-1]
+
+                QOD5 = self.modify_qod_551(Dose = int(self.tar[-1][-1])-20, RMS = 2.0, Shrink_margin = grid*4, Opti_all = 0,LABEL =[item[0],'BODY'])
+                OARs = OARs + QOD5[:-1]                
+                
+                OARs.append('!END\n')
+                
+        ## ============================ part3 ============================== ##
+        part3 = self.element['# Part3\n'][:-1]
+        
+        ## ============================ part4 ============================== ##
+        # here are two selections for part4
+        
+        if delivery_type == 'VMAT':
+            # VMAT 360 ARC
+            part4 = self.element['# Part4_VMAT\n'][:-1] 
+        elif delivery_type == 'IMRT':
+            # IMRT 9beams step&shoot
+            part4 = self.element['# Part4_IMRT\n'][:-1]
+        
+        ## ============================ part5 ============================== ##
+        part5 = self.element['# Part5\n'][:-1]
+        for i,item in enumerate(part5):
+            if 'FRACTIONS' in item:
+                part5[i] = ''.join(['!FRACTIONS    ',str(fractions),'\n'])
+            
+            elif 'PRESCRIPTION' in item:
+                part5[i] = ''.join(['!PRESCRIPTION    ',str(float(prescription_dose)),'\n'])
+                
+            elif 'DOSEGRIDSIZE' in item:
+                part5[i] = ''.join(['!DOSEGRIDSIZE    ',str(float(grid)),'\n'])
+            
+#            elif 'MAXNARCS' in item:
+#                part5[i] = ''.join(['!MAXNARCS    ',str(float(ARCS)),'\n'])
+        
+        ## ================== template ==================== ##        
+        self.template_line = self.template_line + part1 + target + OARs + part3 + part4 + part5
+        
+        print('###############################')
+        print('template has been generated !')
+        print('###############################')
+              
+        
+        return self.template_line   
+
+    def hyp_solution_NPC_V3(self,grid,fractions,prescription_dose,delivery_type):
+        
+        '''
+          This is another version of NPC model
+        '''
+        self.template_line = []
+        
+        # deal with target
+        self.tar = [(key,self.protocol_dict[key][0][1],
+                float(self.protocol_dict[key][0][0].split('V')[1].split('Gy')[0]))
+           for key in self.protocol_dict.keys() if 'PCTV' in key or 'PGTV' in key or 'GTV' in key]
+        self.tar.sort(key=lambda x:x[2],reverse = True)
+        self.tar_nam = [item[0] for item in self.tar]
+        
+        sorted_name = self.name_sorting()
+#        OARs_nam = [item for item in sorted_name if item not in self.tar_nam and item in self.protocol_dict.keys()] + ['R6','R7']
+        OARs_nam = [item for item in sorted_name if item not in self.tar_nam and item in self.protocol_dict.keys()] + ['PostAvoid','TracheaAvoid']
+        prep_name = self.tar_nam + OARs_nam +['BODY']
+        OARs_nam = OARs_nam + ['BODY']  
+        ## ============================ part1 ============================== ##
+        part1 = ['000610b6\n','!LAYERING\n'] # Monaco5.51 serial number: 000610b6
+        for item in prep_name:
+            if item == 'patient' or item == 'BODY':
+                part1.append(str('    ' + item + '\n'))       
+            else:
+                part1.append(str('    ' + item + ':T\n'))
+                    
+        part1.append('!END\n')
+         
+        ## ============================ part2 ============================== ##   
+        part2 = self.element['# Part2\n'][:-1]  ## read template
+        target = []
+        OARs = []   
+        
+        # Target part
+        for i,item in enumerate(self.tar):
+            
+            if i != len(self.tar)-1:  ## inner target 
+                
+                part2[1] = '    name=' + item[0] +'\n'
+
+                # setting target penalty
+                tar_pen = self.modify_qp_551(Vol = item[1],Dose = item[2],Weight = 1.0,Opti_all = 1,Surf_margin = 0)
+                
+                # setting quadratic overdose
+                qod = self.modify_qod_551(Dose = int(item[2]+2),RMS = 0.5,Shrink_margin = 0,Opti_all = 0,LABEL = [item[0],'TARGET'])
+                
+                # combine them together
+                target = target + part2 + tar_pen[:-1] + qod[:-1]
+                target.append('!END\n')
+                
+            else:   ## external target
+                
+                part2[1] = '    name=' + item[0] +'\n'  
+                
+                # setting target penalty
+                tar_pen_ext = self.modify_qp_551(Vol = item[1],Dose = item[2],Weight = 1.0,Opti_all = 1,Surf_margin = 0)
+                target = target + part2 + tar_pen_ext[:-1]
+                
+                # first quadratic overdose to contrain inner target reigon to prevent hot dose release to low dose region
+                qod1 = self.modify_qod_551(Dose = self.tar[i-1][-1],RMS = 0.5,Shrink_margin = 0,Opti_all = 0,LABEL =[item[0],'TARGET'])
+                target = target + qod1[:-1]
+                
+                # second quadratic overdose to constarin 110% percent of external target dose region
+                qod2 = self.modify_qod_551(Dose = int(item[2]*1.08),RMS = 1,Shrink_margin = grid*2, Opti_all= 0,LABEL =[item[0],'TARGET'])
+                target = target + qod2[:-1]
+                
+                # third quadratic overdose to constrain 102% percent of external target dose region
+                qod3 = self.modify_qod_551(Dose = int(item[2]*1.0),RMS = 2,Shrink_margin = grid*3, Opti_all = 0,LABEL =[item[0],'TARGET'])
+                target = target + qod3[:-1]
+                
+                target.append('!END\n')
+        
+        # OARs part
+        for item in OARs_nam:
+            '''
+            
+            D_x_cc < y Gy => if x < 10, then two cost functions were added:
+                1. serial (k = 12, Isoconstraint(EUD) = 0.75*y)
+                2. maximum dose (isoconstraint = y)
+                
+            D_x_% < y Gy
+            
+            1. if  40% < x < 60%, then one cost function was added:
+                serial (k = 1, isocostraint = y)
+            2. if  20% < x < 40%, then one cost function was added:
+                serial (k = 8, isoconstraint = 0.95*y)
+            3. if  10% < x < 20%, then one cost function was added:
+                serial (k = 12, isoconstaraint = 0.85*y)
+            4. if  0% < x < 10%, then one cost function was added:
+                serial (k = 15, isoconstraint = 0.75*y)
+                
+            
+            '''
+            
+            if item == 'Brain Stem':
+                
+                part2[1] = '    name=' + item +'\n'
+                
+                # select the maximum value from protocol request and 0.8*prescription dose
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                
+                # select CF: maximum                
+                cf = self.modify_mxd_551(Dose=int(max_dose)+1,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+                
+            elif item == 'Spinal Cord':
+                                
+                part2[1] = '    name=' + item +'\n'                
+
+                # select the maximum value from protocol request and 0.75*prescription dose
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                
+                # select CF:maximum 
+                cf = self.modify_mxd_551(Dose=int(max_dose)+2,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')  
+                                
+            elif item == 'Optical Chiasm' or item == 'Optical Nerve L' or item == 'Optical Nerve R':
+                
+                part2[1] = '    name=' + item +'\n'                
+
+                # select the maximum value from protocol request and 0.75*prescription dose
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                
+                # select CF:maximum 
+                cf = self.modify_mxd_551(Dose=int(max_dose)+1,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')  
+
+            elif item == 'Lens R' or item == 'Lens L':
+                                 
+                part2[1] = '    name=' + item +'\n'                
+
+                # select the maximum value from protocol request
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                
+                # select CF:maximum
+                cf = self.modify_mxd_551(Dose=int(max_dose)+1,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')                  
+            
+            elif item == 'Eye R' or item == 'Eye L':
+                                 
+                part2[1] = '    name=' + item +'\n'                
+
+
+                if '%' in self.protocol_dict[item][0][0]:
+                    
+                    percent = float(self.protocol_dict[item][0][0].split('D')[1].split('%')[0])
+                    
+                    if percent < 10: 
+                                                
+                        # select CF: maximum
+                        max_dose =  float(self.protocol_dict[item][0][1].split('Gy')[0])
+                        cf = self.modify_mxd_551(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                        
+                    else:
+                        
+                        # select CF: serial
+                        eud_dose = 0.5*self.tar[-1][-1]           
+                        cf = self.modify_se_551(Dose=int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=12)                       
+
+
+                elif 'cc' in self.protocol_dict[item][0][0]:
+                    
+                    vol = float(self.protocol_dict[item][0][0].split('D')[1].split('cc')[0])
+                    
+                    if vol < 10: 
+                                                
+                        # select CF: maximum
+                        max_dose =  float(self.protocol_dict[item][0][1].split('Gy')[0])
+                        cf = self.modify_mxd_551(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                        
+                    else:
+                        
+                        # select CF: serial
+                        eud_dose = 0.5*self.tar[-1][-1]           
+                        cf = self.modify_se_551(Dose=int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=12)    
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')               
+
+            elif item == 'Parotid R' or item == 'Parotid L':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: serial (constrain high dose region)
+                eud_dose1 = 0.65*self.tar[-1][-1]
+                cf1 = self.modify_se_551(Dose= eud_dose1,Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1]
+            
+                # select CF2: serial (constrain mean dose)
+                eud_dose2 = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf2 = self.modify_se_551(Dose= eud_dose2+2,Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=1) 
+                
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n')   
+
+            elif item == 'Oral Cavity':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: serial (constrain high dose region)
+                eud_dose1 = 0.85*self.tar[-1][-1]
+                cf1 = self.modify_se_551(Dose= int(eud_dose1),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1] 
+                
+                # select CF2: serial (constrain mean dose, eud = pro_dose+2Gy)
+                eud_dose2 = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),0.8*self.tar[-1][-1])
+                cf2 = self.modify_se_551(Dose= int(eud_dose2),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=1) 
+
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n')         
+
+            elif item == 'Larynx':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: serial (constrain high dose region)
+                eud_dose1 = 0.75*self.tar[-1][-1]
+                cf1 = self.modify_se_551(Dose= int(eud_dose1),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1]
+            
+                # select CF2: parallel (constrain mean dose, eud = pro_dose+2Gy)
+                eud_dose2 = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),0.7*self.tar[-1][-1])
+                cf2 = self.modify_se_551(Dose= int(eud_dose2),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=1) 
+                
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n') 
+                
+            elif item == 'Pitutary' or item == 'Pituitary':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF: Parallel (constrain D50% and optimize all)
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf = self.modify_pa_551(Ref_dose= int(max_dose),Volume = 50, Weight=0.01,Powe_Law=4,Opti_all=0,Shrink_margin=0) 
+
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+
+            elif item == 'T.Lobe R' or item == 'T.Lobe L':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF: Serial (constrain high dose region)
+                eud_dose = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),0.8*self.tar[-1][-1])
+                cf1 = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')                 
+                               
+            elif item == 'Brain':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF: Maximum (Constrain D5%)
+#                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+#                cf = self.modify_mxd_551(Dose= int(max_dose)+5,Weight=0.01,Opti_all=1,Shrink_margin=grid)
+                eud_dose = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),0.75*self.tar[-1][-1])
+                cf = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                        
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')                  
+                
+            elif item == 'Mandible':
+                
+                print('Mandible')
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: Quadratic Overdose(Constrain D2cc/Max Dose)
+                max_dose = self.tar[-1][-1]
+                cf1 = self.modify_qod_551(Dose= int(max_dose),RMS = 0.25,Shrink_margin = grid,Opti_all = 0,LABEL =[item[0],'OARs']) 
+                # cf1 = self.modify_mxd(Dose=max_dose,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                # cf1 = self.modify_se(Dose= max_dose*0.75,Weight=0.01,Shrink_margin=0.25,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1]
+                
+                # select CF1: Serial (Constrain D50% dose )
+                eud_dose = self.tar[-1][-1]*0.8
+                cf2 = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=1)    
+    
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n') 
+                
+
+            elif item == 'A.D L' or item == 'A.D R' or item == 'T.Joint R' or item == 'T.Joint L':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Parallel (Constrain D50% dose )
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf = self.modify_pa_551(Ref_dose= int(max_dose),Volume = 50, Weight=0.01,Powe_Law=4,Opti_all=0,Shrink_margin=0)   
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')
+
+            elif item == 'Lung' or item == 'Lungs':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Serial (Constrain high dose )
+                eud_dose = self.tar[-1][-1]*0.65
+                cf = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')  
+
+            # assistance structure like SPPRV,BSPRV,R6,R7
+            elif item == 'SPPRV':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = self.tar[-1][-1]*0.65
+                cf = self.modify_mxd_551(Dose= int(max_dose), Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+
+            elif item == 'BSPRV':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = self.tar[-1][-1]*0.75
+                cf = self.modify_mxd_551(Dose= int(max_dose), Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+
+            elif item == 'R7' or item == 'TracheaAvoid':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = self.tar[-1][-1]*0.8
+                cf = self.modify_mxd_551(Dose= int(max_dose)+2, Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')
+                
+            elif item == 'R6' or item == 'PostAvoid':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = self.tar[-1][-1]*0.75
+                cf = self.modify_mxd_551(Dose= int(max_dose)+2, Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')
+
+
+            elif item == 'BODY' or item == 'Patient' or item == 'Body': ## patient
+                
+                part2[1] = '    name=' + item +'\n'
+                
+                ## global maximum dose
+                mxd1 = self.modify_mxd_551(Dose= int(self.tar[0][-1]*1.1), Weight=0.01, Opti_all=1, Shrink_margin=0)
+                OARs = OARs + part2 + mxd1[:-1]
+                
+                ## the outer target dose
+                QOD1 = self.modify_qod_551(Dose = int(self.tar[-1][-1]), RMS = 0.5, Shrink_margin = 0, Opti_all=0,LABEL =[item[0],'BODY'])
+                OARs = OARs + QOD1[:-1]
+                
+                QOD2 = self.modify_qod_551(Dose = int(self.tar[-1][-1])-5, RMS = 0.75, Shrink_margin = grid,Opti_all = 0,LABEL =[item[0],'BODY'])
+                OARs = OARs + QOD2[:-1]
+
+                QOD3 = self.modify_qod_551(Dose = int(self.tar[-1][-1])-10, RMS = 1, Shrink_margin = grid*2,Opti_all = 0,LABEL =[item[0],'BODY'])
+                OARs = OARs + QOD3[:-1]
+
+                QOD4 = self.modify_qod_551(Dose = int(self.tar[-1][-1])-15, RMS = 1.25, Shrink_margin = grid*3, Opti_all= 0,LABEL =[item[0],'BODY'])
+                OARs = OARs + QOD4[:-1]
+
+                QOD5 = self.modify_qod_551(Dose = int(self.tar[-1][-1])-20, RMS = 2.0, Shrink_margin = grid*4, Opti_all = 0,LABEL =[item[0],'BODY'])
+                OARs = OARs + QOD5[:-1]                
+                
+                OARs.append('!END\n')
+                
+        ## ============================ part3 ============================== ##
+        part3 = self.element['# Part3\n'][:-1]
+        
+        ## ============================ part4 ============================== ##
+        # here are two selections for part4
+        
+        if delivery_type == 'VMAT':
+            # VMAT 360 ARC
+            part4 = self.element['# Part4_VMAT\n'][:-1] 
+        elif delivery_type == 'IMRT':
+            # IMRT 9beams step&shoot
+            part4 = self.element['# Part4_IMRT\n'][:-1]
+        
+        ## ============================ part5 ============================== ##
+        part5 = self.element['# Part5\n'][:-1]
+        for i,item in enumerate(part5):
+            if 'FRACTIONS' in item:
+                part5[i] = ''.join(['!FRACTIONS    ',str(fractions),'\n'])
+            
+            elif 'PRESCRIPTION' in item:
+                part5[i] = ''.join(['!PRESCRIPTION    ',str(float(prescription_dose)),'\n'])
+                
+            elif 'DOSEGRIDSIZE' in item:
+                part5[i] = ''.join(['!DOSEGRIDSIZE    ',str(float(grid)),'\n'])
+            
+#            elif 'MAXNARCS' in item:
+#                part5[i] = ''.join(['!MAXNARCS    ',str(float(ARCS)),'\n'])
+        
+        ## ================== template ==================== ##        
+        self.template_line = self.template_line + part1 + target + OARs + part3 + part4 + part5
+        
+        print('###############################')
+        print('template has been generated !')
+        print('###############################')
+              
+        
+        return self.template_line   
+
+    def hyp_solution_NPC_PeterThoughts(self,grid,fractions,prescription_dose,delivery_type):
+        
+        '''
+          This is another version of NPC model
+        '''
+        self.template_line = []
+        
+        # deal with target
+        self.tar = [(key,self.protocol_dict[key][0][1],
+                float(self.protocol_dict[key][0][0].split('V')[1].split('Gy')[0]))
+           for key in self.protocol_dict.keys() if 'PCTV' in key or 'PGTV' in key or 'GTV' in key]
+        self.tar.sort(key=lambda x:x[2],reverse = True)
+        self.tar_nam = [item[0] for item in self.tar]
+        
+        sorted_name = self.name_sorting()
+#        OARs_nam = [item for item in sorted_name if item not in self.tar_nam and item in self.protocol_dict.keys()] + ['R6','R7']
+        OARs_nam = [item for item in sorted_name if item not in self.tar_nam and item in self.protocol_dict.keys()] + ['PostAvoid','TracheaAvoid']
+        prep_name = self.tar_nam + OARs_nam +['BODY']
+        OARs_nam = OARs_nam + ['BODY']  
+        ## ============================ part1 ============================== ##
+        part1 = ['000610b6\n','!LAYERING\n'] # Monaco5.51 serial number: 000610b6
+        for item in prep_name:
+            if item == 'patient' or item == 'BODY':
+                part1.append(str('    ' + item + '\n'))       
+            else:
+                part1.append(str('    ' + item + ':T\n'))
+                    
+        part1.append('!END\n')
+         
+        ## ============================ part2 ============================== ##   
+        part2 = self.element['# Part2\n'][:-1]  ## read template
+        target = []
+        OARs = []   
+        
+        # Target part
+        for i,item in enumerate(self.tar):
+            
+            if i != len(self.tar)-1:  ## inner target 
+                
+                part2[1] = '    name=' + item[0] +'\n'
+
+                # setting target penalty
+                tar_pen = self.modify_qp_551(Vol = item[1],Dose = item[2],Weight = 1.0,Opti_all = 1,Surf_margin = 0)
+                
+                # setting quadratic overdose
+                qod = self.modify_qod_551(Dose = int(item[2]+2),RMS = 0.5,Shrink_margin = 0,Opti_all = 0,LABEL = [item[0],'TARGET'])
+                
+                # combine them together
+                target = target + part2 + tar_pen[:-1] + qod[:-1]
+                target.append('!END\n')
+                
+            else:   ## external target
+                
+                part2[1] = '    name=' + item[0] +'\n'  
+                
+                # setting target penalty
+                tar_pen_ext = self.modify_qp_551(Vol = item[1],Dose = item[2],Weight = 1.0,Opti_all = 1,Surf_margin = 0)
+                target = target + part2 + tar_pen_ext[:-1]
+                
+                # first quadratic overdose to contrain inner target reigon to prevent hot dose release to low dose region
+                qod1 = self.modify_qod_551(Dose = self.tar[i-1][-1],RMS = 0.5,Shrink_margin = 0,Opti_all = 0,LABEL =[item[0],'TARGET'])
+                target = target + qod1[:-1]
+                
+                # second quadratic overdose to constarin 110% percent of external target dose region
+                qod2 = self.modify_qod_551(Dose = int(item[2]*1.08),RMS = 1,Shrink_margin = grid*2, Opti_all= 0,LABEL =[item[0],'TARGET'])
+                target = target + qod2[:-1]
+                
+                # third quadratic overdose to constrain 102% percent of external target dose region
+                qod3 = self.modify_qod_551(Dose = int(item[2]*1.0),RMS = 2,Shrink_margin = grid*3, Opti_all = 0,LABEL =[item[0],'TARGET'])
+                target = target + qod3[:-1]
+                
+                target.append('!END\n')
+        
+        # OARs part
+        for item in OARs_nam:
+            '''
+            
+            D_x_cc < y Gy => if x < 10, then two cost functions were added:
+                1. serial (k = 12, Isoconstraint(EUD) = 0.75*y)
+                2. maximum dose (isoconstraint = y)
+                
+            D_x_% < y Gy
+            
+            1. if  40% < x < 60%, then one cost function was added:
+                serial (k = 1, isocostraint = y)
+            2. if  20% < x < 40%, then one cost function was added:
+                serial (k = 8, isoconstraint = 0.95*y)
+            3. if  10% < x < 20%, then one cost function was added:
+                serial (k = 12, isoconstaraint = 0.85*y)
+            4. if  0% < x < 10%, then one cost function was added:
+                serial (k = 15, isoconstraint = 0.75*y)
+                
+            
+            '''
+            
+            if item == 'Brain Stem':
+                
+                part2[1] = '    name=' + item +'\n'
+                
+                # select the maximum value from protocol request and 0.8*prescription dose
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                
+                # select CF: maximum                
+                cf = self.modify_mxd_551(Dose=int(max_dose)+1,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+                
+            elif item == 'Spinal Cord':
+                                
+                part2[1] = '    name=' + item +'\n'                
+
+                # select the maximum value from protocol request and 0.75*prescription dose
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                
+                # select CF:maximum 
+                cf = self.modify_mxd_551(Dose=int(max_dose)+2,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')  
+                                
+            elif item == 'Optical Chiasm' or item == 'Optical Nerve L' or item == 'Optical Nerve R':
+                
+                part2[1] = '    name=' + item +'\n'                
+
+                # select the maximum value from protocol request and 0.75*prescription dose
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                
+                # select CF:maximum 
+                cf = self.modify_mxd_551(Dose=int(max_dose)+1,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')  
+
+            elif item == 'Lens R' or item == 'Lens L':
+                                 
+                part2[1] = '    name=' + item +'\n'                
+
+                # select the maximum value from protocol request
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                
+                # select CF:maximum
+                cf = self.modify_mxd_551(Dose=int(max_dose)+1,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')                  
+            
+            elif item == 'Eye R' or item == 'Eye L':
+                                 
+                part2[1] = '    name=' + item +'\n'                
+
+
+                if '%' in self.protocol_dict[item][0][0]:
+                    
+                    percent = float(self.protocol_dict[item][0][0].split('D')[1].split('%')[0])
+                    
+                    if percent < 10: 
+                                                
+                        # select CF: maximum
+                        max_dose =  float(self.protocol_dict[item][0][1].split('Gy')[0])
+                        cf = self.modify_mxd_551(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                        
+                    else:
+                        
+                        # select CF: serial
+                        eud_dose = 0.5*self.tar[-1][-1]           
+                        cf = self.modify_se_551(Dose=int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=12)                       
+
+
+                elif 'cc' in self.protocol_dict[item][0][0]:
+                    
+                    vol = float(self.protocol_dict[item][0][0].split('D')[1].split('cc')[0])
+                    
+                    if vol < 10: 
+                                                
+                        # select CF: maximum
+                        max_dose =  float(self.protocol_dict[item][0][1].split('Gy')[0])
+                        cf = self.modify_mxd_551(Dose=int(max_dose),Weight=0.01,Opti_all=1,Shrink_margin=0)
+                        
+                    else:
+                        
+                        # select CF: serial
+                        eud_dose = 0.5*self.tar[-1][-1]           
+                        cf = self.modify_se_551(Dose=int(eud_dose),Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=12)    
+                
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')               
+
+            elif item == 'Parotid R' or item == 'Parotid L':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: serial (constrain high dose region)
+                eud_dose1 = 0.65*self.tar[-1][-1]
+                cf1 = self.modify_se_551(Dose= eud_dose1,Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1]
+            
+                # select CF2: serial (constrain mean dose)
+                eud_dose2 = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf2 = self.modify_se_551(Dose= eud_dose2+2,Weight=0.01,Shrink_margin=0,Opti_all=0,Powe_Law=1) 
+                
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n')   
+
+            elif item == 'Oral Cavity':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: serial (constrain high dose region)
+                eud_dose1 = 0.85*self.tar[-1][-1]
+                cf1 = self.modify_se_551(Dose= int(eud_dose1),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1] 
+                
+                # select CF2: serial (constrain mean dose, eud = pro_dose+2Gy)
+                eud_dose2 = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),0.8*self.tar[-1][-1])
+                cf2 = self.modify_se_551(Dose= int(eud_dose2),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=1) 
+
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n')         
+
+            elif item == 'Larynx':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: serial (constrain high dose region)
+                eud_dose1 = 0.75*self.tar[-1][-1]
+                cf1 = self.modify_se_551(Dose= int(eud_dose1),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1]
+            
+                # select CF2: parallel (constrain mean dose, eud = pro_dose+2Gy)
+                eud_dose2 = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),0.7*self.tar[-1][-1])
+                cf2 = self.modify_se_551(Dose= int(eud_dose2),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=1) 
+                
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n') 
+                
+            elif item == 'Pitutary' or item == 'Pituitary':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF: Parallel (constrain D50% and optimize all)
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf = self.modify_pa_551(Ref_dose= int(max_dose),Volume = 50, Weight=0.01,Powe_Law=4,Opti_all=0,Shrink_margin=0) 
+
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+
+            elif item == 'T.Lobe R' or item == 'T.Lobe L':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF: Serial (constrain high dose region)
+                eud_dose = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),0.8*self.tar[-1][-1])
+                cf1 = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')                 
+                               
+            elif item == 'Brain':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF: Maximum (Constrain D5%)
+#                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+#                cf = self.modify_mxd_551(Dose= int(max_dose)+5,Weight=0.01,Opti_all=1,Shrink_margin=grid)
+                eud_dose = max(float(self.protocol_dict[item][0][1].split('Gy')[0]),0.75*self.tar[-1][-1])
+                cf = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12) 
+                        
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')                  
+                
+            elif item == 'Mandible':
+                
+                print('Mandible')
+                part2[1] = '    name=' + item +'\n'    
+                
+                # select CF1: Quadratic Overdose(Constrain D2cc/Max Dose)
+                max_dose = self.tar[-1][-1]
+                cf1 = self.modify_qod_551(Dose= int(max_dose),RMS = 0.25,Shrink_margin = grid,Opti_all = 0,LABEL =[item[0],'OARs']) 
+                # cf1 = self.modify_mxd(Dose=max_dose,Weight=0.01,Opti_all=1,Shrink_margin=0)
+                # cf1 = self.modify_se(Dose= max_dose*0.75,Weight=0.01,Shrink_margin=0.25,Opti_all=0,Powe_Law=12) 
+                OARs = OARs + part2 + cf1[:-1]
+                
+                # select CF1: Serial (Constrain D50% dose )
+                eud_dose = self.tar[-1][-1]*0.8
+                cf2 = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=1)    
+    
+                OARs = OARs + cf2[:-1]
+                OARs.append('!END\n') 
+                
+
+            elif item == 'A.D L' or item == 'A.D R' or item == 'T.Joint R' or item == 'T.Joint L':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Parallel (Constrain D50% dose )
+                max_dose = float(self.protocol_dict[item][0][1].split('Gy')[0])
+                cf = self.modify_pa_551(Ref_dose= int(max_dose),Volume = 50, Weight=0.01,Powe_Law=4,Opti_all=0,Shrink_margin=0)   
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')
+
+            elif item == 'Lung' or item == 'Lungs':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Serial (Constrain high dose )
+                eud_dose = self.tar[-1][-1]*0.65
+                cf = self.modify_se_551(Dose= int(eud_dose),Weight=0.01,Shrink_margin=grid,Opti_all=0,Powe_Law=12)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')  
+
+            # assistance structure like SPPRV,BSPRV,R6,R7
+            elif item == 'SPPRV':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = self.tar[-1][-1]*0.65
+                cf = self.modify_mxd_551(Dose= int(max_dose), Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+
+            elif item == 'BSPRV':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = self.tar[-1][-1]*0.75
+                cf = self.modify_mxd_551(Dose= int(max_dose), Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n') 
+
+            elif item == 'R7' or item == 'TracheaAvoid':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = self.tar[-1][-1]*0.8
+                cf = self.modify_mxd_551(Dose= int(max_dose)+2, Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')
+                
+            elif item == 'R6' or item == 'PostAvoid':
+                                 
+                part2[1] = '    name=' + item +'\n'    
+
+                # select CF: Maximum (Constrain high dose )
+                max_dose = self.tar[-1][-1]*0.75
+                cf = self.modify_mxd_551(Dose= int(max_dose)+2, Weight=0.01, Opti_all=1, Shrink_margin=0)    
+    
+                OARs = OARs + part2 + cf[:-1]
+                OARs.append('!END\n')
+
 
             elif item == 'BODY' or item == 'Patient' or item == 'Body': ## patient
                 
@@ -2335,7 +3322,9 @@ class Initialization_MON551(HYP_Editor_MONACO551):
         
 
         # updated new template folder and file path
-        self.updated_template_path = os.path.join(path,self.pt_id)
+        
+        self.updated_template_path = 'C:/Users/Public/Documents/CMS/FocalData/MonacoTemplates'
+        # self.updated_template_path = os.path.join(path,self.pt_id)
         updated_template_path2 = os.path.join(path,self.pt_id)
         output_xml_path = os.path.join(self.updated_template_path,self.pt_id+self.delivery_method+'.dosenormsettings.xml')
         hyp_path_new = os.path.join(self.updated_template_path,self.pt_id+self.delivery_method+'.hyp')
@@ -2390,7 +3379,7 @@ class Initialization_MON551(HYP_Editor_MONACO551):
         
         # generate new hyp file
         if LABEL == 'NPC':
-            self.updated_template = HYP_Editor_MONACO551.hyp_solution_NPC_V2(self,
+            self.updated_template = HYP_Editor_MONACO551.hyp_solution_NPC_V3(self,
                                                              grid=self.grid_dose,
                                                              fractions=self.fx,
                                                              prescription_dose=self.prep_dose,
