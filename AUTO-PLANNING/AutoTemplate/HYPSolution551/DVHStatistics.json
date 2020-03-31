@@ -1,0 +1,668 @@
+{
+  "StatisticsOfStructureList": [
+    {
+      "StructureName": "PGTVnx",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 52.908,
+      "MaxDose": 6628.8,
+      "MinDose": 5910.2,
+      "MeanDose": 6281.3,
+      "DoseInfoList": [
+        {
+          "RefVol": 50.263,
+          "RefVolPercentage": 95.0,
+          "RefDose": 6160.0,
+          "DoseGoalResult": 3,
+          "DosimetricCriterion": "D95% > 6160 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 1.04,
+      "ConformityIndex": 0.34
+    },
+    {
+      "StructureName": "PGTVnd",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 51.735,
+      "MaxDose": 6682.1,
+      "MinDose": 5145.9,
+      "MeanDose": 6216.1,
+      "DoseInfoList": [
+        {
+          "RefVol": 49.148,
+          "RefVolPercentage": 95.0,
+          "RefDose": 6049.7,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D95% > 5936 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 1.06,
+      "ConformityIndex": 0.19
+    },
+    {
+      "StructureName": "Pituitary",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 0.423,
+      "MaxDose": 4067.7,
+      "MinDose": 1295.7,
+      "MeanDose": 2508.9,
+      "DoseInfoList": [
+        {
+          "RefVol": 0.211,
+          "RefVolPercentage": 50.0,
+          "RefDose": 2369.6,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D50% < 3800 cGy"
+        },
+        {
+          "RefVol": "NaN",
+          "RefVolPercentage": "NaN",
+          "RefDose": "NaN",
+          "DoseGoalResult": 0,
+          "DosimetricCriterion": null
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 2.95,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Optical Chiasm",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 0.816,
+      "MaxDose": 3944.6,
+      "MinDose": 1164.9,
+      "MeanDose": 2259.2,
+      "DoseInfoList": [
+        {
+          "RefVol": 0.008,
+          "RefVolPercentage": 1.0,
+          "RefDose": 3838.3,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D1% < 4200 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 2.7,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "PCTV",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 709.497,
+      "MaxDose": 6716.6,
+      "MinDose": 2251.6,
+      "MeanDose": 5721.3,
+      "DoseInfoList": [
+        {
+          "RefVol": 674.022,
+          "RefVolPercentage": 95.0,
+          "RefDose": 5094.7,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D95% > 5040 cGy"
+        },
+        {
+          "RefVol": "NaN",
+          "RefVolPercentage": "NaN",
+          "RefDose": "NaN",
+          "DoseGoalResult": 0,
+          "DosimetricCriterion": null
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 1.24,
+      "ConformityIndex": 0.73
+    },
+    {
+      "StructureName": "Brain Stem",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 23.604,
+      "MaxDose": 3930.4,
+      "MinDose": 584.3,
+      "MeanDose": 2388.5,
+      "DoseInfoList": [
+        {
+          "RefVol": 0.1,
+          "RefVolPercentage": 0.42,
+          "RefDose": 3743.5,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D0.1cm³ < 4000 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 4.15,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Spinal Cord",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 16.038,
+      "MaxDose": 3209.2,
+      "MinDose": 525.5,
+      "MeanDose": 2364.4,
+      "DoseInfoList": [
+        {
+          "RefVol": 0.1,
+          "RefVolPercentage": 0.62,
+          "RefDose": 3010.0,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D0.1cm³ < 3500 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 1.67,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Optical Nerve R",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 0.72,
+      "MaxDose": 3076.2,
+      "MinDose": 389.9,
+      "MeanDose": 1456.1,
+      "DoseInfoList": [
+        {
+          "RefVol": 0.007,
+          "RefVolPercentage": 1.0,
+          "RefDose": 3043.3,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D1% < 4200 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 6.64,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Optical Nerve L",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 0.705,
+      "MaxDose": 3183.0,
+      "MinDose": 403.3,
+      "MeanDose": 1515.6,
+      "DoseInfoList": [
+        {
+          "RefVol": 0.007,
+          "RefVolPercentage": 1.0,
+          "RefDose": 3145.5,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D1% < 4200 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 6.26,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Lens L",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 0.21,
+      "MaxDose": 467.7,
+      "MinDose": 219.4,
+      "MeanDose": 302.9,
+      "DoseInfoList": [
+        {
+          "RefVol": 0.002,
+          "RefVolPercentage": 1.0,
+          "RefDose": 461.4,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D1% < 500 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 1.84,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Lens R",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 0.264,
+      "MaxDose": 330.1,
+      "MinDose": 203.4,
+      "MeanDose": 262.5,
+      "DoseInfoList": [
+        {
+          "RefVol": 0.003,
+          "RefVolPercentage": 1.0,
+          "RefDose": 325.9,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D1% < 500 cGy"
+        },
+        {
+          "RefVol": "NaN",
+          "RefVolPercentage": "NaN",
+          "RefDose": "NaN",
+          "DoseGoalResult": 0,
+          "DosimetricCriterion": null
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 1.43,
+      "ConformityIndex": "NaN"
+    },
+    {
+      "StructureName": "Eye L",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 8.01,
+      "MaxDose": 2111.2,
+      "MinDose": 156.7,
+      "MeanDose": 417.2,
+      "DoseInfoList": [
+        {
+          "RefVol": 2.403,
+          "RefVolPercentage": 30.0,
+          "RefDose": 429.7,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D30% < 1000 cGy"
+        },
+        {
+          "RefVol": "NaN",
+          "RefVolPercentage": "NaN",
+          "RefDose": "NaN",
+          "DoseGoalResult": 0,
+          "DosimetricCriterion": null
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 5.3,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Eye R",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 8.316,
+      "MaxDose": 2691.5,
+      "MinDose": 129.8,
+      "MeanDose": 514.0,
+      "DoseInfoList": [
+        {
+          "RefVol": 2.495,
+          "RefVolPercentage": 30.0,
+          "RefDose": 524.3,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D30% < 1000 cGy"
+        },
+        {
+          "RefVol": "NaN",
+          "RefVolPercentage": "NaN",
+          "RefDose": "NaN",
+          "DoseGoalResult": 0,
+          "DosimetricCriterion": null
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 7.04,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Brain",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 1014.498,
+      "MaxDose": 6033.7,
+      "MinDose": 71.6,
+      "MeanDose": 762.9,
+      "DoseInfoList": [
+        {
+          "RefVol": 50.725,
+          "RefVolPercentage": 5.0,
+          "RefDose": 2850.0,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D5% < 3500 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 24.85,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Parotid L",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 30.582,
+      "MaxDose": 6196.4,
+      "MinDose": 751.5,
+      "MeanDose": 2703.4,
+      "DoseInfoList": [
+        {
+          "RefVol": 15.291,
+          "RefVolPercentage": 50.0,
+          "RefDose": 2371.3,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D50% < 2500 cGy"
+        },
+        {
+          "RefVol": "NaN",
+          "RefVolPercentage": "NaN",
+          "RefDose": "NaN",
+          "DoseGoalResult": 0,
+          "DosimetricCriterion": null
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 5.47,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Parotid R",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 29.925,
+      "MaxDose": 5901.3,
+      "MinDose": 497.8,
+      "MeanDose": 2657.6,
+      "DoseInfoList": [
+        {
+          "RefVol": 14.963,
+          "RefVolPercentage": 50.0,
+          "RefDose": 2482.1,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D50% < 2500 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 5.7,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "T.Joint L",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 1.458,
+      "MaxDose": 4775.0,
+      "MinDose": 1484.5,
+      "MeanDose": 2763.2,
+      "DoseInfoList": [
+        {
+          "RefVol": 0.729,
+          "RefVolPercentage": 50.0,
+          "RefDose": 2571.5,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D50% < 4000 cGy"
+        },
+        {
+          "RefVol": "NaN",
+          "RefVolPercentage": "NaN",
+          "RefDose": "NaN",
+          "DoseGoalResult": 0,
+          "DosimetricCriterion": null
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 2.46,
+      "ConformityIndex": "NaN"
+    },
+    {
+      "StructureName": "T.Joint R",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 0.741,
+      "MaxDose": 4938.5,
+      "MinDose": 1820.0,
+      "MeanDose": 2995.0,
+      "DoseInfoList": [
+        {
+          "RefVol": 0.371,
+          "RefVolPercentage": 50.0,
+          "RefDose": 2892.0,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D50% < 4000 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 2.17,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "T.Lobe L",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 53.973,
+      "MaxDose": 6068.4,
+      "MinDose": 128.7,
+      "MeanDose": 1074.0,
+      "DoseInfoList": [
+        {
+          "RefVol": 1.619,
+          "RefVolPercentage": 3.0,
+          "RefDose": 4677.5,
+          "DoseGoalResult": 3,
+          "DosimetricCriterion": "D3% < 4500 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 21.5,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "T.Lobe R",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 64.074,
+      "MaxDose": 5772.9,
+      "MinDose": 121.8,
+      "MeanDose": 1025.4,
+      "DoseInfoList": [
+        {
+          "RefVol": 1.922,
+          "RefVolPercentage": 3.0,
+          "RefDose": 4382.4,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D3% < 4500 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 20.97,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Larynx",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 38.721,
+      "MaxDose": 6220.5,
+      "MinDose": 1406.8,
+      "MeanDose": 3021.5,
+      "DoseInfoList": [
+        {
+          "RefVol": 19.361,
+          "RefVolPercentage": 50.0,
+          "RefDose": 2768.6,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D50% < 3400 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 3.12,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "A.D L",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 3.258,
+      "MaxDose": 5933.7,
+      "MinDose": 836.1,
+      "MeanDose": 2889.0,
+      "DoseInfoList": [
+        {
+          "RefVol": 1.629,
+          "RefVolPercentage": 50.0,
+          "RefDose": 2534.0,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D50% < 3800 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 4.53,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "A.D R",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 3.402,
+      "MaxDose": 5705.8,
+      "MinDose": 1055.3,
+      "MeanDose": 2898.3,
+      "DoseInfoList": [
+        {
+          "RefVol": 1.701,
+          "RefVolPercentage": 50.0,
+          "RefDose": 2533.8,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D50% < 3800 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 3.83,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Lung",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 1147.497,
+      "MaxDose": 5707.0,
+      "MinDose": 26.4,
+      "MeanDose": 433.1,
+      "DoseInfoList": [
+        {
+          "RefVol": 229.499,
+          "RefVolPercentage": 20.0,
+          "RefDose": 337.8,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D20% < 1000 cGy"
+        },
+        {
+          "RefVol": "NaN",
+          "RefVolPercentage": "NaN",
+          "RefDose": "NaN",
+          "DoseGoalResult": 0,
+          "DosimetricCriterion": null
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 2,
+      "HeterogeneityIndex": 46.39,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Mandible",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 74.307,
+      "MaxDose": 5899.3,
+      "MinDose": 1262.0,
+      "MeanDose": 3270.7,
+      "DoseInfoList": [
+        {
+          "RefVol": 2.0,
+          "RefVolPercentage": 2.69,
+          "RefDose": 4800.8,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D2cm³ < 5200 cGy"
+        },
+        {
+          "RefVol": 37.154,
+          "RefVolPercentage": 50.0,
+          "RefDose": 3296.9,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D50% < 3500 cGy"
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 2.79,
+      "ConformityIndex": 0.0
+    },
+    {
+      "StructureName": "Oral Cavity",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 127.488,
+      "MaxDose": 6540.3,
+      "MinDose": 1225.2,
+      "MeanDose": 3458.4,
+      "DoseInfoList": [
+        {
+          "RefVol": 63.744,
+          "RefVolPercentage": 50.0,
+          "RefDose": 2909.5,
+          "DoseGoalResult": 1,
+          "DosimetricCriterion": "D50% < 3400 cGy"
+        },
+        {
+          "RefVol": "NaN",
+          "RefVolPercentage": "NaN",
+          "RefDose": "NaN",
+          "DoseGoalResult": 0,
+          "DosimetricCriterion": null
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 1,
+      "HeterogeneityIndex": 3.83,
+      "ConformityIndex": 0.01
+    },
+    {
+      "StructureName": "BODY(Unsp.Tiss.)",
+      "PlanName": "",
+      "StudysetName": "",
+      "Volume": 4964.988,
+      "MaxDose": 4650.7,
+      "MinDose": 3.6,
+      "MeanDose": 87.4,
+      "DoseInfoList": [
+        {
+          "RefVol": "NaN",
+          "RefVolPercentage": "NaN",
+          "RefDose": "NaN",
+          "DoseGoalResult": 0,
+          "DosimetricCriterion": null
+        }
+      ],
+      "PercentangeInVolume": "NaN",
+      "IsInSS": 2,
+      "HeterogeneityIndex": 9.83,
+      "ConformityIndex": "NaN"
+    }
+  ]
+}

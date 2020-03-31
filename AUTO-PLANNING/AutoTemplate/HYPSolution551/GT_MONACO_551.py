@@ -339,19 +339,225 @@ class HYP_Editor_MONACO551:
         
         return self.line
         
-    def classify(self,strt_ind_list):
+    def csv_read_to_dvh(self):
+        '''
+           This function was used to extract DVH data from csv file
+           20200330 was updated and no error occurs
+        '''
+        import csv
+        import os
+        ss = os.listdir('C:/auto template/dvh')
+        dir_list = sorted(ss,  key=lambda x: os.path.getmtime(os.path.join('C:/auto template/dvh', x)))
+        csv_file = [item for item in dir_list if item.split('.')[1] == 'csv']
         
-        self.level_OARs = {}
-        for item in strt_ind_list:
-            if item[2] > 2 and item[2] < 7:
-                self.level_OARs[item[0]] = 1
-            elif item[2] > 6 and item[2] < 16:
-                self.level_OARs[item[0]] = 2
-            elif item[2] == 16:
-                self.level_OARs[item[0]] = 3
-            elif item[2] > 16 and item[2] < 24:
-                self.level_OARs[item[0]] = 3
-        return self.level_OARs
+        path_dvh = os.path.join('C:/auto template/dvh',csv_file[-1])
+        csv_reader = csv.reader(open(path_dvh, encoding='utf-8'))
+        row = [ row for row in csv_reader]
+        # clean dvh data
+
+
+        dvh_ = row[3:-3]  ## remove redundant data
+        dvh = []
+        for i in dvh_:
+            if ' ' in i[0] or '  ' in i[0]: # organ name
+                kk = i[0].split('  ')
+            kkk = [j for j in kk if j!='' and j!=' ']
+
+            if ' ' in i[1]:                 # absolute dose
+                dd = i[1].split(' ')
+            ddd = [j for j in dd if j!='' and j!=' ']
+
+            if ' ' in i[2]:                 # relative volume
+                vv = i[2].split(' ')
+            vvv = [j for j in vv if j!='' and j!=' ']
+            
+            dvh.append(kkk+ddd+vvv)
+            
+        for i,item in enumerate(dvh):
+            if len(item)>3:
+                st = ''
+                for j in item[0:-2]:
+                    st += (j+' ')
+                dvh[i] = [st[:-1],dvh[i][-2],dvh[i][-1]]
+            else:
+                pass
+
+        flag = []
+        for i in range(len(dvh)-1):
+            if dvh[i][0] != dvh[i+1][0]:
+                flag.append((dvh.index(dvh[i]),dvh[i][0]))
+                continue
+        flag.append((dvh.index(dvh[-1]),dvh[-1][0])) # to mark the position of each organ's name
+        
+        self.DVH = {item[1]:[] for item in flag}
+                
+        for j in range(len(flag)):
+            
+            if j != 0:
+                
+                for k in range(flag[j-1][0]+1,flag[j][0]+1):
+                    
+                    self.DVH[flag[j][1]].append((float(dvh[k][1]),float(dvh[k][2])))
+                    
+            else:
+                
+                for k in range(flag[j][0]+1):
+                    
+                    self.DVH[flag[j][1]].append((float(dvh[k][1]),float(dvh[k][2])))
+        
+        return self.DVH
+
+    def DVH_MAX_MEAN(self,dvh_data):
+        '''
+           This function deals with the dvh data for evaluation and guide for next parameters modification
+           dvh_data : dict.({'Brain':[(d1,v1),(d2,v2),....]})
+           dvh_data_diff : differential dvh data
+           
+           In this program, PTV5096's maximum dose has some problems.
+        '''
+        dvh_data_diff = {}
+        self.dvh_inf = {}
+        self.dvh_inf['Dmean'] = {}
+        self.dvh_inf['Dmax'] = {}
+        for key in dvh_data.keys():
+            
+            dvh_data_diff[key] = [(dvh_data[key][i][0],dvh_data[key][i][1]-dvh_data[key][i+1][1]) for i in range(len(dvh_data[key])-1)]
+            
+            dvh_data_diff[key].append((dvh_data[key][-1][0],dvh_data[key][-1][1]))
+            
+            self.dvh_inf['Dmean'][key] = round(sum(item[0]*item[1] for item in dvh_data_diff[key])/sum([item[1] for item in dvh_data_diff[key]]),1)
+         
+                
+            for item in dvh_data[key]:
+                
+                if item[1] == 0:
+                    
+                    flag = dvh_data[key].index(item)
+                    break
+                
+            self.dvh_inf['Dmax'][key] = dvh_data[key][flag-1][0]
+     
+        return self.dvh_inf
+
+    def DVH_Stat_Extract(self,dvh_inf,dvh_new_data):
+            #plan_results1
+            '''
+            This function returns a plan results of DVH
+            the name of dvh_new_data must be consistent with struct_index
+            e.g.
+
+            self.protocol_dict = {'PCTV': [['V50.4Gy', 0.95, '9']],
+                                    'Mandible': [['D50%', '35Gy', '7'], ['D2cc', '60Gy', '8']]}
+
+            self.dvh_stat_calc = {'PCTV': [['V50.4Gy', 0.95, 0.98, 1.12, '9']],
+                                    'Mandible': [['D50%', '35Gy', '30Gy', 0.67, '7'], ['D2cc', '60Gy', '56Gy', 0.88, '8']]}
+            '''
+            import numpy as np
+            from scipy.interpolate import interp1d 
+            # self.dvh_indices,self.diff_result = {},{}
+            # for item in pres_strt_ind.keys(): self.dvh_indices[item] = []
+            # for item in pres_strt_ind.keys(): self.diff_result[item] = []
+            self.dvh_stat_calc = {item:[] for item in self.protocol_dict.keys()}
+            
+            for item in self.protocol_dict.keys():
+                    
+                    for j in self.protocol_dict[item]:
+                        # e.g. j = ['V50.4Gy', 0.95, '9']
+                        
+                        if j[0][0] == 'D':
+                            
+                            if j[0][1:] == 'max' or j[0][1:] == 'mean':  # Dmean or Dmax
+
+                                cal_dose = round(dvh_inf[j[0]][item]/100,1)
+                                diff_index = cal_dose/float(self.protocol_dict[item][j][1].split('Gy')[0])
+
+                                self.dvh_stat_calc[item].append([self.protocol_dict[item][j][0],
+                                                                self.protocol_dict[item][j][1],
+                                                                str(cal_dose)+'Gy',diff_index,
+                                                                self.protocol_dict[item][j][-1]])
+                            elif j[0][-1] == '%': # DX%
+
+                                Relative_Vol = float(j[0].split('D')[1].split('%')[0])
+                                # execute interpolate algorithm to get calculated dose
+                                mini = 10000
+                                dose = float(j[0][1:])*100
+                                for item1 in dvh_new_data[item]:
+                                    if abs(item1[0]-dose) < mini:
+                                        mini = abs(item1[0]-dose)
+                                        mini_id = dvh_new_data[item].index(item1)
+
+
+                                cal_dose = round(dvh_inf[j[0]][item]/100,1)
+                                diff_index = cal_dose/float(self.protocol_dict[item][j][1].split('Gy')[0])
+
+                                self.dvh_stat_calc[item].append([self.protocol_dict[item][j][0],
+                                                                self.protocol_dict[item][j][1],
+                                                                str(cal_dose)+'Gy',diff_index,
+                                                                self.protocol_dict[item][j][-1]])
+                            
+                            
+                        elif j[1] == 95.0:
+                            
+                            cover = float(j[0][1:])*100  ## indicate prescription dose
+                            
+                            for item1 in dvh_new_data[item]:
+                                ## retify the problem in 0-5100
+                                if item1[1] == 100:
+                                    
+                                    index = dvh_new_data[item].index(item1)
+                                    
+                                    print('appear 5096 in 0-5111')
+                                    
+                                    
+                            if cover <= dvh_new_data[item][index][0]:
+                                
+                                self.dvh_indices[item].append((j[0],100))
+                            
+                            else:
+                                
+                                mini = 100
+                                mini_id = 0
+                                for item1 in dvh_new_data[item]:
+                                    if abs(item1[0]-cover) <= mini:
+                                        mini = abs(item1[0]-cover)
+                                        mini_id = dvh_new_data[item].index(item1)
+                                        
+                                x,y = [],[]
+                                for i in range(mini_id-1,mini_id+2):
+                                    y.append(round(dvh_new_data[item][i][1],4))
+                                    x.append(round(dvh_new_data[item][i][0],4))
+                                    
+                                x = np.array(x)
+                                y = np.array(y)
+                                f=interp1d(x,y,kind = 'linear')#interpolate
+                                self.dvh_indices[item].append((j[0],round(float(f(cover)),4)))
+                            
+                        elif j[0][0] == 'V':
+                        
+                            ## to find with interpolate without consider 0.03cc              
+                            mini = 10000
+                            dose = float(j[0][1:])*100
+                            for item1 in dvh_new_data[item]:
+                                if abs(item1[0]-dose) < mini:
+                                    mini = abs(item1[0]-dose)
+                                    mini_id = dvh_new_data[item].index(item1)
+                            xx = [dvh_new_data[item][i][0] for i in range(mini_id-1,mini_id+2)]
+                            yy = [dvh_new_data[item][i][1] for i in range(mini_id-1,mini_id+2)]
+                            f=interp1d(xx,yy,kind = 'linear')  #linear interpolate
+                            self.dvh_indices[item].append((j[0],round(float(f(dose)),2)))   
+                            
+            for item in self.dvh_indices:
+                for i,j in zip(self.dvh_indices[item],pres_strt_ind[item]):
+                    self.diff_result[item].append((j[0],round(i[1]/j[1],2)))
+            
+
+
+
+
+            
+            return self.dvh_indices #self.dvh_stat_calc
+
+
 
     def modify_conf_551(self,Opti_all,isoconstraint):
         '''
@@ -831,6 +1037,134 @@ class HYP_Editor_MONACO551:
 
         return self.element['# uv\n']
 
+    def DVH_Stat_Extract_JSON(self,DVH_JSON):
+        
+        '''
+           This function was develped to extract DVH statistics from JSON
+            e.g.
+            self.dvh_stat_calc = {'PCTV': [['V50.4Gy > 95%', 0.98, 1.12, '9']],
+                                 'Mandible': [['D50% < 35Gy', 30, 0.67, '7'], ['D2cc < 60Gy', 56, 0.88, '8']]}
+            
+            self.protocol_dict = {'PCTV': [['V50.4Gy', 0.95, '9']],
+                                 'Mandible': [['D50%', '35Gy', '7'], ['D2cc', '60Gy', '8']]}
+
+
+        '''
+        import json 
+        self.dvh_stat_calc = {item:[] for item in self.protocol_dict.keys()}
+
+        with open(DVH_JSON,'r', encoding='UTF-8') as f:
+            load_dict = json.load(f)
+
+        for i,item in enumerate(load_dict['StatisticsOfStructureList']):
+
+            if item['StructureName'] in self.protocol_dict.keys():
+                
+                for j,jtem in enumerate(load_dict['StatisticsOfStructureList'][i]['DoseInfoList']):
+                    
+                    calc_dose = round(float(jtem['RefDose'])/100,2)
+                    print(self.protocol_dict[item['StructureName']],j,item['StructureName'],jtem['DosimetricCriterion'])
+
+                    if jtem['DosimetricCriterion'] != None:
+                        if type(self.protocol_dict[item['StructureName']][j][1]) == float:
+
+                            diff_indx = round(calc_dose/float(self.protocol_dict[item['StructureName']][j][1]),5)
+                            self.dvh_stat_calc[item['StructureName']].append([jtem['DosimetricCriterion'],
+                                                                            calc_dose, diff_indx,
+                                                                            self.protocol_dict[item['StructureName']][j][-1]])
+
+                        elif type(self.protocol_dict[item['StructureName']][j][1]) == str:
+                            diff_indx = round(calc_dose/float(self.protocol_dict[item['StructureName']][j][1].split('Gy')[0]),5)
+                            self.dvh_stat_calc[item['StructureName']].append([jtem['DosimetricCriterion'],
+                                                                            calc_dose, diff_indx,
+                                                                            self.protocol_dict[item['StructureName']][j][-1]])
+
+        return self.dvh_stat_calc
+
+    def read_template(self):
+        
+        '''
+           1) Read template.hyp file and transfer to another Data format
+           2) Extract isoconstraint information from Data format
+           Need further changes for read_template
+        '''
+        
+        self.line,self.strt,self.pointer,self.dose_eng_index ,self.strt_index= [],[],[],[],[]
+        self.strt_fun = {}
+     
+        with open(self.hyp_path, "r+") as f:
+            
+          line1 = f.readline()
+          
+          self.line.append(line1)
+          
+          while line1:
+              
+            self.pointer.append(f.tell())  #record the pointer loaction to help write
+            
+            line1 = f.readline()
+            
+            self.line.append(line1)
+    
+        # mark place of structure in line
+        self.strt_index = [i for i,a in enumerate(self.line) if a=='!VOIDEF\n']
+        
+        self.dose_eng_index = [i for i,a in enumerate(self.line) if a=='!DOSE_ENGINES\n']
+        
+        count = len(self.strt_index)
+        
+        self.strt = [self.line[j+1][9:-1] for j in self.strt_index]
+                
+        # list_fun record number of cost function and type    
+        for index in range(count):
+            
+            count_fun = 0
+            
+            list_fun = []
+            
+            indx = [4,6,9,10,13,16,18,19,20,23,21,22] #? what's this mean
+            
+            type_cost = ['type=se','type=pa','type=mxd','type=po','type=qp','type=conf','type=o_q','type=u_q','type=u_v','type=o_v']
+            
+            if index == count-1:
+                
+                for flag in range(self.strt_index[index],self.dose_eng_index[0]):
+                    
+                    if self.line[flag] == '    !COSTFUNCTION\n':
+                        
+                        count_fun = count_fun + 1
+                        
+                        list_fun.append([self.line[flag+1][8:-1],flag+1])
+                        
+                        # cost functions differ with flag+1
+                        if self.line[flag+1][8:-1] in type_cost:
+                            
+                            for item in indx:
+                                
+                                list_fun.append([self.line[flag+item][8:-1],flag+item])                               
+            else:
+                
+                for flag in range(self.strt_index[index],self.strt_index[index+1]):
+                    
+                    if self.line[flag] == '    !COSTFUNCTION\n':
+                        
+                        count_fun = count_fun + 1
+                        
+                        list_fun.append([self.line[flag+1][8:-1],flag+1])
+                        
+                        if self.line[flag+1][8:-1] in type_cost:
+                            
+                            for item in indx:
+                                
+                                list_fun.append([self.line[flag+item][8:-1],flag+item])
+                       
+            list_fun.append(count_fun)
+            
+            self.strt_fun[self.strt[index]] = list_fun    
+    
+        return self.strt_fun,self.strt_index,self.line
+
+
 
     def read_csv(self):
         
@@ -924,155 +1258,6 @@ class HYP_Editor_MONACO551:
                     self.cost_fun.extend(pa)  
     
         return self.cost_fun
-
-
-    def ge_tem_pros(self,strt_ind_list,path_beam,dose_frac):
-    
-        import math
-        self.template_line = []
-        grid = 3
-        tar = [(item[0],item[1],float(item[1][0][0][1:])) for item in strt_ind_list if 'PTV' in item[0] or 'PGTV' in item[0] or 'GTV' in item[0]]
-        tar.sort(key=lambda x:x[2],reverse = True)
-        tar_nam = [item[0] for item in tar]
-        
-        
-        OARs_nam = [item[0] for item in strt_ind_list if item[0] not in tar_nam]
-        prep_name = []
-        prep_name = prep_name + tar_nam + OARs_nam
-        ##tar_res_nam = [item[0] for item in OARs_nam_level if 'PTV' in item[0] or 'PGTV' in item[0]] 
-           
-
-        ind = self.path[0].rindex('\\')
-        path_new = {}
-        for item in self.path:
-            path_new[item[int(ind+1):-4]] = self.exist_read_mod(item)
-        
-        
-        pres = float(dose_frac[1][1])/100
-        weight_target = 1
-        weight_OARs = 0.01
-        k_se = 12
-        k_pa = 3
-        RMS = 1
-        max_dose = 47.5
-        ## ================== part1 ================= ##
-        part1 = ['000610b6\n','!LAYERING\n']
-        for item in prep_name:
-            if item == 'patient' or item == 'BODY':
-                part1.append(str('    ' + item + '\n'))       
-            else:
-                part1.append(str('    ' + item + ':T\n'))
-                    
-        part1.append('!END\n')
-         
-        ## ==================  part2 ================ ##    
-        part2 = path_new['part2']  ## read template
-        part2[-2] = '    conformalavoidance=0\n'
-        part2 = part2[:-1]
-        target = []
-        OARs = []   
-        
-        for i,item in enumerate(tar):
-            
-            if i != len(tar)-1:  ## inner target 1
-                
-                part2[1] = '    name=' + item[0] +'\n' 
-#                prep_v = float((item[1][0][1]+3)/100)
-                prep_d = float(item[1][0][0][1:])
-                tar_pen = self.modify_po(path_new['po'],prep_d,0.6) 
-                qod = self.modify_qod(path_new['qod'],prep_d+2,RMS,0)
-                target = target + part2 + tar_pen + qod
-                target.append('!END\n')
-                
-            else:   ## external target
-                
-                part2[1] = '    name=' + item[0] +'\n'    
-#                prep_v = float((item[1][0][1]+3)/100)
-                prep_d = float(item[1][0][0][1:])
-                po = self.modify_po(path_new['po'],prep_d,0.6)
-                
-                ## set two quadratic overdose to external targets
-                qod1 = self.modify_qod(path_new['qod'],pres,RMS,0)
-    #            QOD2 = temp_tool.modify_QOD(QOD_path,prep_d-4,RMS1,grid)
-                qod2 = self.modify_qod(path_new['qod'],prep_d*1.1,RMS,grid*math.floor(abs(prep_d*1.1-pres)/grid))
-                
-                target = target + part2 + po +qod1 + qod2
-                target.append('!END\n')
-    
-        for item in strt_ind_list:
-            
-            if item[0] not in tar_nam:
-                            
-                if item[-1] == 5: ##　stem and cord
-                    
-                    part2[1] = '    name=' + item[0] +'\n'
-                    cf1 = self.cf_OAR(path_new,item)
-                    OARs = OARs + part2 + cf1
-                    OARs.append('!END\n')                           
-                                                      
-                elif item[-1] == 6: ##  normal tissues
-                    
-                    part2[1] = '    name=' + item[0] +'\n'
-                    cf2 = self.cf_OAR(path_new,item)
-                    OARs = OARs + part2 + cf2
-                    OARs.append('!END\n')      
-                elif item[-1] == 7: ##  normal tissues
-                    
-                    part2[1] = '    name=' + item[0] +'\n'
-                    cf3 = self.cf_OAR(path_new,item)
-                    OARs = OARs + part2 + cf3
-                    OARs.append('!END\n')        
-                    
-                elif item[-1] == 8: ##  normal tissues
-                    
-                    part2[1] = '    name=' + item[0] +'\n'
-                    cf4 = self.cf_OAR(path_new,item)
-                    OARs = OARs + part2 + cf4
-                    OARs.append('!END\n')     
-                
-                elif item[-1] == 9: ##  normal tissues
-                    
-                    part2[1] = '    name=' + item[0] +'\n'
-                    cf5 = self.cf_OAR(path_new,item)
-                    OARs = OARs + part2 + cf5
-                    OARs.append('!END\n')    
-                
-                
-                elif item[-1] == 100: ## patient
-                
-                    part2[1] = '    name=' + item[0] +'\n'
-                    ## global maximum dose
-                    mxd1 = self.modify_mxd(path_new['mxd'], round(pres*1.06,2), weight_OARs, 1, 0)
-                    ## the outer target dose
-                    QOD1 = self.modify_qod(path_new['qod'],max_dose,RMS,grid*0)
-                    QOD2 = self.modify_qod(path_new['qod'],max_dose*0.8,RMS/2,grid*math.floor((max_dose*0.2)/grid))
-                    QOD3 = self.modify_qod(path_new['qod'],max_dose*0.6,RMS/2,grid*math.floor((max_dose*0.4)/grid))
-                    OARs = OARs + part2 + mxd1 + QOD1 + QOD2 + QOD3
-                    OARs.append('!END\n')
-            
-        
-        ## ================== part3 ================ ##
-        part3 = path_new['part3']
-        part3[-2] = '!END\n'
-        
-        ## ================== part4 ================ ##
-        part4 = self.exist_read_mod(path_beam)
-        part4[-2] = '!END\n'
-        
-        ## ================== part5 ================ ##
-        part5 = path_new['part5']
-        for i,item in enumerate(part5):
-            if 'FRACTIONS' in item:
-                part5[i] = ''.join(['!FRACTIONS    ',dose_frac[0][1],'\n'])
-            elif 'PRESCRIPTION' in item:
-                part5[i] = ''.join(['!PRESCRIPTION    ',str(float(dose_frac[1][1])/100),'\n'])
-        
-        ## ================== template ==================== ##        
-        self.template_line = self.template_line + part1 + target + OARs + part3[:-1] + part4[:-1] + part5[:-1]      
-        print('###############################')
-        print('template has been generated !')
-        print('###############################')
-        return self.template_line
 
     def hyp_solution_XHTOMO_HEADNECK(self,grid,fractions,prescription_dose,delivery_type):
         

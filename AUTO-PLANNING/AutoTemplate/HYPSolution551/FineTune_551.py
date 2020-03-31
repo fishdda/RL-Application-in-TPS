@@ -21,20 +21,20 @@ class TEMPLATE_FINE_TUNE:
                iteration# > threshold
            [6] FMO finished <flag = 2> and Phase2 start automatically.
     '''
-    def __init__(self,path,ind_loc_strt,iter_path,hyp_path,hyp_path_updated,DVH_CSV):
+    def __init__(self,protocol_dict,hyp_path,hyp_path_updated,DVH_CSV):
         '''
         Initalization of all parameters:
             1. protocol path <protocol_xlsx >
             2. template path <hyp_path>
         '''
-        self.path = path
-        self.ind = ind_loc_strt
-        self.iter_path = iter_path
-        self.dvh_name = ''
-        self.hyp_path = hyp_path # temporary hyp file path
-        self.hyp_path_updated = hyp_path_updated # updated hyp file path
-        self.DVH_path = DVH_CSV # current DVH statistics CSV path 
-  
+        #self.path = path
+        #self.ind = ind_loc_strt
+        #self.iter_path = iter_path
+        self.protocol_dict = protocol_dict             # protocol dict extracted from protocol.xlsx
+        self.hyp_path = hyp_path                       # temporary hyp file path
+        self.hyp_path_updated = hyp_path_updated       # updated hyp file path
+        self.DVH_path = DVH_CSV                        # current DVH statistics CSV path 
+
     def read_dvh(self):
         
         with open(self.path[2][2], "r+") as f:
@@ -106,6 +106,7 @@ class TEMPLATE_FINE_TUNE:
     def csv_read_to_dvh(self):
         '''
            This function was used to extract DVH data from csv file
+           20200330 was updated and no error occurs
         '''
         import csv
         import os
@@ -122,9 +123,19 @@ class TEMPLATE_FINE_TUNE:
         dvh_ = row[3:-3]  ## remove redundant data
         dvh = []
         for i in dvh_:
-            kk = i[0].split(' ')
-            pp = [j for j in kk if j!='']
-            dvh.append(pp)
+            if ' ' in i[0] or '  ' in i[0]: # organ name
+                kk = i[0].split('  ')
+            kkk = [j for j in kk if j!='' and j!=' ']
+
+            if ' ' in i[1]:                 # absolute dose
+                dd = i[1].split(' ')
+            ddd = [j for j in dd if j!='' and j!=' ']
+
+            if ' ' in i[2]:                 # relative volume
+                vv = i[2].split(' ')
+            vvv = [j for j in vv if j!='' and j!=' ']
+            
+            dvh.append(kkk+ddd+vvv)
             
         for i,item in enumerate(dvh):
             if len(item)>3:
@@ -134,20 +145,14 @@ class TEMPLATE_FINE_TUNE:
                 dvh[i] = [st[:-1],dvh[i][-2],dvh[i][-1]]
             else:
                 pass
-#        for item in row:
-#            if len(item) == 3:
-#                for i in range(len(item)):
-#                    item[i] = item[i].replace(' ','')
-                    
-#        dvh = row[3:-3]  ## remove redundant data
+
         flag = []
         for i in range(len(dvh)-1):
             if dvh[i][0] != dvh[i+1][0]:
                 flag.append((dvh.index(dvh[i]),dvh[i][0]))
                 continue
-        flag.append((dvh.index(dvh[-1]),dvh[-1][0]))
-                
-                
+        flag.append((dvh.index(dvh[-1]),dvh[-1][0])) # to mark the position of each organ's name
+        
         self.DVH = {item[1]:[] for item in flag}
                 
         for j in range(len(flag)):
@@ -275,8 +280,9 @@ class TEMPLATE_FINE_TUNE:
     def read_template(self):
         
         '''
-           This function read template.hyp file to another Data struct for
-           later dealing
+           1) Read template.hyp file and transfer to another Data format
+           2) Extract isoconstraint information from Data format
+           
         '''
         
         self.line,self.strt,self.pointer,self.dose_eng_index ,self.strt_index= [],[],[],[],[]
@@ -312,7 +318,7 @@ class TEMPLATE_FINE_TUNE:
             
             list_fun = []
             
-            indx = [4,6,9,10,13,16,18,19,20,23,21,22]
+            indx = [4,6,9,10,13,16,18,19,20,23,21,22] #? what's this mean
             
             type_cost = ['type=se','type=pa','type=mxd','type=po','type=qp','type=conf','type=o_q','type=u_q','type=u_v','type=o_v']
             
@@ -434,7 +440,7 @@ class TEMPLATE_FINE_TUNE:
         return self.dvh_data,self.pres_strt_ind
  
     
-    def DVH_inf(self,dvh_data):
+    def DVH_MAX_MEAN(self,dvh_data):
         '''
            This function deals with the dvh data for evaluation and guide for next parameters modification
            dvh_data : dict.({'Brain':[(d1,v1),(d2,v2),....]})
@@ -499,23 +505,38 @@ class TEMPLATE_FINE_TUNE:
         return self.name
 
  
-    def plan_results1(self,dvh_inf,dvh_new_data,pres_strt_ind):
+    def plan_results1(self,dvh_inf,dvh_new_data):
         '''
            This function returns a plan results of DVH
            the name of dvh_new_data must be consistent with struct_index
-           
+           e.g.
+
+           self.protocol_dict = {'PCTV': [['V50.4Gy', 0.95, '9']],
+                                 'Mandible': [['D50%', '35Gy', '7'], ['D2cc', '60Gy', '8']]}
+
+           self.dvh_stat_calc = {'PCTV': [['V50.4Gy', 0.95, 0.98, 1.12, '9']],
+                                 'Mandible': [['D50%', '35Gy', '30Gy', 0.67, '7'], ['D2cc', '60Gy', '56Gy', 0.88, '8']]}
         '''
         import numpy as np
         from scipy.interpolate import interp1d 
-        self.dvh_indices,self.diff_result = {},{}
-        for item in pres_strt_ind.keys(): self.dvh_indices[item] = []
-        for item in pres_strt_ind.keys(): self.diff_result[item] = []
+        # self.dvh_indices,self.diff_result = {},{}
+        # for item in pres_strt_ind.keys(): self.dvh_indices[item] = []
+        # for item in pres_strt_ind.keys(): self.diff_result[item] = []
+        self.dvh_stat_calc = {item:[] for item in self.protocol_dict.keys()}
         
-        for item in pres_strt_ind:
+        for item in self.protocol_dict:
                 
-                for j in pres_strt_ind[item]:
+                for j in self.protocol_dict[item]:
                     
-                    if j[0] == 'Dmax':
+#                    if j[0][0] == 'D':
+                        
+ #                       if j[0][1:] == 'max':
+
+  #                      elif j[0][1:] == 'mean':
+
+   #                     elif j[0][-1] == '%':
+
+                    if j[0] == 'Dmax': # judge the first flag e.g. 'D50%'
                         
                         self.dvh_indices[item].append((j[0],round(dvh_inf[j[0]][item]/100,2)))
                         
@@ -1533,23 +1554,22 @@ class TEMPLATE_FINE_TUNE:
     def exe1(self,tras):
         '''
           This function was mainly used for extract the dvh results for optimization 
+          Suppose the structure name is definitely consistent with plan protocol name.
         '''
         
         import random 
         import time
         
         flag = self.read_flag()   #read flag file
-        while flag == '1':        
-            '''
-            This time sleep is for Monaco Calculation
-            '''
-            time.sleep(15)    
-            
+        while flag == '1':
+
+            time.sleep(5)   #This time sleep is for Monaco Calculation
+
             flag = self.read_flag()      
             
             print ('flag = 1,waiting for Monaco Calculation...\n')      
         
-        print ('flag = {}, start adjusting optimiation parameters...\n'.format(flag))    
+        print ('flag = {}, ROBOT start and adjusting IMRT parameters...\n'.format(flag))    
             
         if flag == '0':      
             
@@ -1561,9 +1581,9 @@ class TEMPLATE_FINE_TUNE:
             
             dvh_new_data,pres_strt_ind = self.read_csv_zs(DVH,tras)  #1) ensure names in dvh is consistent with struct 2)read prescription
             
-            dvh_inf = self.DVH_inf(dvh_new_data)  #extract Dmean and Dmax from DVH
+            dvh_inf = self.DVH_MAX_MEAN(dvh_new_data)  #extract Dmean and Dmax from DVH
             
-            dvh_indices,diff_result = self.plan_results1(dvh_inf,dvh_new_data,pres_strt_ind)   #calcualte the ratio of calculation and prescription
+            dvh_indices,diff_result = self.plan_results1(dvh_inf,dvh_new_data)   #calcualte the ratio of calculation and prescription
            
             self.write_dvh(str(dvh_name+str(random.randint(0,10)))) # to prevent the repetition of name
             

@@ -51,6 +51,18 @@ for pt_id in pt_id_list:
                        PT_path)
         
         X.MAIN_GENERATE('NPC')
+
+protocol_dict = X.extract_xlsx(pt_id_list[0])  # protocol_dict store the constraints in protocol
+
+DVH = X.csv_read_to_dvh() # DVH Raw Data Struct
+
+dvh_inf = X.DVH_MAX_MEAN(DVH) # Dmean and Dmax extracted
+
+# need to change if Yvonne could provide the modified version of DVH Statistics table 
+#dvh_stat_calc = X.DVH_Stat_Extract(dvh_inf,DVH) 
+
+
+# 
 ###############################################################################
 
 ###############################################################################
@@ -62,19 +74,36 @@ for pt_id in pt_id_list:
 ###############################################################################
 
 # absolute DVH csv file path
-DVH_CSV = '/Users/henryhuang/Desktop/Elekta stuff/auto template 1/dvh/002_VMAT20200317_DVH_1.csv'
+#DVH_CSV = 'C:/auto template/dvh/002_VMAT20200317_DVH_1.csv'
+DVH_JSON = 'C:/auto template/dvh/DVHStatistics.json'
 
 # temporary hyp file path
-hyp_path = '/Users/henryhuang/Desktop/Elekta stuff/auto template 1/template.hyp'
+hyp_path = 'C:/auto template/template.hyp'
 
 # updated hyp file path
-hyp_path_updated = 'C:/Users/Public/Documents/CMS/FocalData/MonacoTemplates'
+dvhhyp_path_updated = 'C:/Users/Public/Documents/CMS/FocalData/MonacoTemplates'
+
+# load treatment plan template (raw data structure)
+strt_fun,strt_index,line = X.read_template()    # need to update 
+
+# read DVH Statistics Information from Monaco TPS
+dvh_stat_calc = X.DVH_Stat_Extract_JSON(DVH_JSON)
+
+# extract strt_fun from strt_fun
+self.extract_strt_fun(strt_fun,self.ind[0][i],self.ind[1][i])
+ind_loc_strt = [[3,7,8,10,9],
+                [13,14,10,7,15],
+                ['shrinkmargin=','isoconstraint=','isoeffect=','weight=','relativeimpact='],
+                ['skg','isc','ise','wgt','rlp']]
+iter_path = 10
+
+#Y = TEMPLATE_FINE_TUNE(protocol_dict,hyp_path,hyp_path_updated,DVH_CSV)
 
 
+#print(DVH.keys())
 
-Y = TEMPLATE_FINE_TUNE(path,ind_loc_strt,iter_path,hyp_path,hyp_path_updated,DVH_CSV)
-
-
+DVH_info = Y.DVH_MAX_MEAN(DVH)
+print(DVH_info)
 #
 #def main():
 #    ## generate template HN 
@@ -94,6 +123,9 @@ Y = TEMPLATE_FINE_TUNE(path,ind_loc_strt,iter_path,hyp_path,hyp_path_updated,DVH
 #    if F == '1':
 #        Y = Tool(path,ind_loc_strt,iter_path)
         #!ind_loc_strt = [[3,7,8,10,9],
+        # [13,14,10,7,15],
+        # ['shrinkmargin=','isoconstraint=','isoeffect=','weight=','relativeimpact='],
+        # ['skg','isc','ise','wgt','rlp']]
         #!dvh_path = ''.join(['C:\\Users\\Shelter6\\Desktop\\dvh\\',ID,'\\round4\\'])
         #!path_ = [''.join([txt_path,'\\',item]) for item in os.listdir(txt_path) if item[-3:] == 'txt']  
         #!path = [csv_file,stru_path,path_,dvh_path,colone_path1]
