@@ -84,8 +84,12 @@ hyp_path = 'C:/auto template/template.hyp'
 dvhhyp_path_updated = 'C:/Users/Public/Documents/CMS/FocalData/MonacoTemplates'
 
 # load treatment plan template (raw data structure)
-strt_fun,strt_index,line = X.read_template()    # need to update 
+# strt_fun,strt_index,line = X.read_template()    # need to update 
+line,strt_index,IMRT_TABLE = X.Read_Template_551()
+print(IMRT_TABLE)
 
+IMRT_CONSTRAINT_TABLE.to_csv('C:/auto template/template.csv')
+IMRT_CONSTRAINT_TABLE.to_json('C:/auto template/template.json',orient='table')
 # read DVH Statistics Information from Monaco TPS
 dvh_stat_calc = X.DVH_Stat_Extract_JSON(DVH_JSON)
 

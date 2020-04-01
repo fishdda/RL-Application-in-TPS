@@ -20,7 +20,8 @@ class HYP_Editor_MONACO551:
                        NAMING_LIB,
                        hyp_path_new,
                        updated_template_path,
-                       new_contourname_path):
+                       new_contourname_path,
+                       TEMP_HYP_PATH):
         
         self.hypelement = hyp_element_path # hyp elements (including each parts)
         
@@ -39,6 +40,8 @@ class HYP_Editor_MONACO551:
         self.updated_hyp_path = hyp_path_new # new path for writing the hyp file 
         
         self.new_template_path = updated_template_path
+
+        self.temp_hyp_path = TEMP_HYP_PATH # a temporary hyp path for finetuning of template
         
     def extract_xlsx(self,pt_id):
         '''
@@ -1084,15 +1087,36 @@ class HYP_Editor_MONACO551:
     def read_template(self):
         
         '''
+        indx = [4,6,9,10,13,16,18,19,20,23,21,22]
+        ['type=se', 969], ['totalvolume=0', 972], ['multicriterial=0', 974], 
+        ['alpha=0', 977], ['beta_alpha=0', 978], ['functreserve=50', 981], ['thresholddose=1', 984], 
+        ['isoeffect=29.461577111141473', 986], ['relativeimpact=0.56278317620823215', 987], 
+        ['status=1', 988], ['groupmargins=0', 991], ['manual=0', 989], ['weight=0.19431211198836026', 990]
+
+
            1) Read template.hyp file and transfer to another Data format
            2) Extract isoconstraint information from Data format
-           Need further changes for read_template
+
+                          type  exponent  ISC  SKG_PTV1   WGT
+                Parotid L   se         1   30         0   0.8
+                Parotid L   se        12   35         0  10.0
+
         '''
-        
+        import pandas as pd
+
+        column = ['type','alpha','refdose','refvolume','exponent','thresholddose','ISC','ISE','RLP','WGT']
+        for item in self.protocol_dict.keys():
+            if 'pgtv' in item.lower() or 'pctv' in item.lower():
+                column.append('SKG_'+item)
+        print(column)
+
+        IMRT_TABLE = {item:[] for item in column}
+
+
         self.line,self.strt,self.pointer,self.dose_eng_index ,self.strt_index= [],[],[],[],[]
         self.strt_fun = {}
      
-        with open(self.hyp_path, "r+") as f:
+        with open(self.temp_hyp_path, "r+") as f:
             
           line1 = f.readline()
           
@@ -1122,9 +1146,10 @@ class HYP_Editor_MONACO551:
             
             list_fun = []
             
-            indx = [4,6,9,10,13,16,18,19,20,23,21,22] #? what's this mean
-            
-            type_cost = ['type=se','type=pa','type=mxd','type=po','type=qp','type=conf','type=o_q','type=u_q','type=u_v','type=o_v']
+            # indx = [4,6,9,10,13,16,17,18,19,20,23,22] #? what's this mean
+            indx = list(range(25))
+            type_cost = ['type=se','type=pa','type=mxd','type=po','type=qp',
+            'type=conf','type=o_q','type=u_q','type=u_v','type=o_v']
             
             if index == count-1:
                 
@@ -1161,8 +1186,219 @@ class HYP_Editor_MONACO551:
             list_fun.append(count_fun)
             
             self.strt_fun[self.strt[index]] = list_fun    
+
     
         return self.strt_fun,self.strt_index,self.line
+
+    def Read_Template_551(self):
+        
+        '''
+        indx = [4,6,9,10,13,16,18,19,20,23,21,22]
+        ['type=se', 969], ['totalvolume=0', 972], ['multicriterial=0', 974], 
+        ['alpha=0', 977], ['beta_alpha=0', 978], ['functreserve=50', 981], ['thresholddose=1', 984], 
+        ['isoeffect=29.461577111141473', 986], ['relativeimpact=0.56278317620823215', 987], 
+        ['status=1', 988], ['groupmargins=0', 991], ['manual=0', 989], ['weight=0.19431211198836026', 990]
+
+
+           1) Read template.hyp file and transfer to another Data format
+           2) Extract isoconstraint information from Data format
+
+                          type  exponent  ISC  SKG_PTV1   WGT
+                Parotid L   se         1   30         0   0.8
+                Parotid L   se        12   35         0  10.0
+
+        '''
+        import pandas as pd
+
+        column = ['type','alpha','refdose','refvolume','exponent',
+                  'thresholddose','ISC','ISE','RLP','WGT','APSHKToOars']
+
+        TUMOR = []
+        for item in self.protocol_dict.keys():
+            if 'pgtv' in item.lower() or 'pctv' in item.lower():
+                TUMOR.append(item)
+                column.append('SKG_'+item)
+    
+        IMRT_TABLE = {item:[] for item in column} # determine the IMRT constraints table
+        self.line,self.strt,self.pointer,self.dose_eng_index,self.strt_index= [],[],[],[],[]
+        self.strt_fun = {}
+
+        with open(self.temp_hyp_path, "r+") as f:
+            
+          line1 = f.readline()
+          
+          self.line.append(line1)
+          
+          while line1:
+              
+            self.pointer.append(f.tell())  #record the pointer loaction to help write
+            
+            line1 = f.readline()
+            
+            self.line.append(line1)
+        
+        # mark place of structure in line
+        self.strt_index = [i for i,a in enumerate(self.line) if a=='!VOIDEF\n']
+        
+        self.dose_eng_index = [i for i,a in enumerate(self.line) if a=='!DOSE_ENGINES\n']
+        
+        count = len(self.strt_index)
+        
+        self.strt = [self.line[j+1][9:-1] for j in self.strt_index]
+
+        # # list_fun record number of cost function and type    
+        strt_name_ind = [] # store the structure name in each row
+        for index in range(count):
+            
+            count_fun = 0
+            
+            list_fun = []
+            
+            if index == count-1:
+
+                type_count = 0
+                skg_count = {}
+
+                for flag in range(self.strt_index[index],self.dose_eng_index[0]):
+
+
+                    if '  ' in self.line[flag] and '=' in self.line[flag]:
+
+                        A = self.line[flag].split('  ')[-1]
+                        AA = A.split('=')[0]
+                        BB = A.split('=')[1].split('\n')[0]
+                        if AA == 'type':
+                            IMRT_TABLE['type'].append(BB)
+                            strt_name_ind.append(self.line[self.strt_index[index]+1].split('  ')[-1].split('=')[-1].split('\n')[0])
+                            type_count = 1
+                        
+                        elif AA == 'alpha':
+                            IMRT_TABLE['alpha'].append(round(float(BB),3))
+
+                        elif AA == 'refdose':
+                            IMRT_TABLE['refdose'].append(round(float(BB),3))
+                        
+                        elif AA == 'refvolume':
+                            IMRT_TABLE['refvolume'].append(round(float(BB),3))
+                        
+                        elif AA == 'exponent':
+                            IMRT_TABLE['exponent'].append(round(float(BB),3))
+
+                        elif AA == 'thresholddose':
+                            IMRT_TABLE['thresholddose'].append(round(float(BB),3))    
+
+                        elif AA == 'isoconstraint':
+                            IMRT_TABLE['ISC'].append(round(float(BB),3))   
+
+                        elif AA == 'isoeffect':
+                            IMRT_TABLE['ISE'].append(round(float(BB),3))   
+
+                        elif AA == 'relativeimpact':
+                            IMRT_TABLE['RLP'].append(round(float(BB),3))   
+
+                        elif AA == 'weight':
+                            IMRT_TABLE['WGT'].append(round(float(BB),3)) 
+
+                        elif AA == 'applyshrinkmargintooars':
+                            IMRT_TABLE['APSHKToOars'].append(round(float(BB),3)) 
+
+                        elif AA == 'shrinkmargintarget':
+                            # print(self.line[flag+1].split(' ')[-1].split('=')[-1].split('\n')[0])
+                            skg = self.line[flag+1].split(' ')[-1].split('=')[-1].split('\n')[0]
+                            IMRT_TABLE['SKG_'+BB].append(round(float(skg),3))    
+                            skg_count['SKG_'+BB] = 1
+
+                    elif '!END' in self.line[flag]:
+                        if self.line[flag].count(' ') == 4:
+                            print(flag)
+                            # this indicate the end of cost function
+                            print('type_count:{}, skg_count:{}'.format(type_count,skg_count))
+                            if skg_count != {}:
+                                for item in TUMOR:
+                                    if 'SKG_'+item not in skg_count.keys():
+                                        IMRT_TABLE['SKG_'+item].append(None)
+                            else:
+                                for item in TUMOR:
+                                    IMRT_TABLE['SKG_'+item].append(None)
+
+
+            else:
+                
+                type_count = 0
+                skg_count = {}
+
+                for flag in range(self.strt_index[index],self.strt_index[index+1]):
+
+
+
+                    if '  ' in self.line[flag] and '=' in self.line[flag]:
+                        # no End in this program
+
+                        A = self.line[flag].split('  ')[-1]
+
+                        AA = A.split('=')[0]
+                        BB = A.split('=')[1].split('\n')[0]
+                        if AA == 'type':
+                            IMRT_TABLE['type'].append(BB)
+                            strt_name_ind.append(self.line[self.strt_index[index]+1].split('  ')[-1].split('=')[-1].split('\n')[0])
+                            type_count = 1
+                        
+                        elif AA == 'alpha':
+                            IMRT_TABLE['alpha'].append(round(float(BB),3))
+
+                        elif AA == 'refdose':
+                            IMRT_TABLE['refdose'].append(round(float(BB),3))
+                        
+                        elif AA == 'refvolume':
+                            IMRT_TABLE['refvolume'].append(round(float(BB),3))
+                        
+                        elif AA == 'exponent':
+                            IMRT_TABLE['exponent'].append(round(float(BB),3))
+
+                        elif AA == 'thresholddose':
+                            IMRT_TABLE['thresholddose'].append(round(float(BB),3))    
+
+                        elif AA == 'isoconstraint':
+                            IMRT_TABLE['ISC'].append(round(float(BB),3))   
+
+                        elif AA == 'isoeffect':
+                            IMRT_TABLE['ISE'].append(round(float(BB),3))   
+
+                        elif AA == 'relativeimpact':
+                            IMRT_TABLE['RLP'].append(round(float(BB),3))   
+
+                        elif AA == 'weight':
+                            IMRT_TABLE['WGT'].append(round(float(BB),3)) 
+
+                        elif AA == 'applyshrinkmargintooars':
+                            IMRT_TABLE['APSHKToOars'].append(round(float(BB),3)) 
+
+                        elif AA == 'shrinkmargintarget':
+                            # print(self.line[flag+1].split(' ')[-1].split('=')[-1].split('\n')[0])
+                            skg = self.line[flag+1].split(' ')[-1].split('=')[-1].split('\n')[0]
+                            IMRT_TABLE['SKG_'+BB].append(round(float(skg),3)) 
+                            skg_count['SKG_'+BB] = 1
+
+                    elif '!END' in self.line[flag]:
+
+                        if self.line[flag].count(' ') == 4:
+                            print(flag)
+                            # this indicate the end of cost function
+                            print('type_count:{}, skg_count:{}'.format(type_count,skg_count))
+                            if skg_count != {}:
+                                for item in TUMOR:
+                                    if 'SKG_'+item not in skg_count.keys():
+                                        IMRT_TABLE['SKG_'+item].append(None)
+                            else:
+                                for item in TUMOR:
+                                    IMRT_TABLE['SKG_'+item].append(None)
+
+        self.IMRT_CONSTRAINT_TABLE = pd.DataFrame(IMRT_TABLE,index = strt_name_ind)   
+
+        return self.line,self.strt_index,self.IMRT_CONSTRAINT_TABLE
+
+
+
 
 
 
@@ -3504,7 +3740,7 @@ class Initialization_MON551(HYP_Editor_MONACO551):
         hyp_element_path = os.path.join(path,'hyp_element551.txt')
         demo_xml_path = os.path.join(path,'demo_dosenormsettings.xml')
         self.absolute_path = os.path.join(path,'remaining4files')
-        
+        temp_template_path = 'C:/auto template/template.hyp'
 
         # updated new template folder and file path
         
@@ -3536,7 +3772,8 @@ class Initialization_MON551(HYP_Editor_MONACO551):
                                                      NAMING_LIB,
                                                      hyp_path_new,
                                                      updated_template_path2,
-                                                     new_contourname_path)
+                                                     new_contourname_path,
+                                                     temp_template_path)
     
     def Standardize_Contour_Name(self):
         
