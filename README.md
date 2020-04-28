@@ -16,5 +16,6 @@
 
 **Currently, f is a rule-based function with the prior knowledge or experience of planners.**
 
+https://doi.org/10.1002/acm2.12848
 
 **In future, f should be optimized to be more intelligent with evolution algorithm or reinforcement learning.**
