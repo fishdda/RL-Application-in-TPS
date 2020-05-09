@@ -1,0 +1,35 @@
+00021027
+8
+CORD
+1,1.000000,1
+Lowerhead
+1,5,1,1,0,0
+LARYNX
+2,1.000000,0
+Lowerhead
+2,5,1,1,0,0
+LEFT CLAVICL
+3,1.000000,0
+Lowerhead
+3,5,1,1,0,0
+MANDIBLE
+4,1.000000,0
+Lowerhead
+4,4,1,1,0,0
+RIGHT CLAVIC
+5,1.000000,0
+Lowerhead
+5,5,1,1,0,0
+MOUTH CAVITY
+6,1.000000,0
+Lowerhead
+6,5,1,1,0,0
+NASOPHARYNX
+7,1.000000,0
+Lowerhead
+7,5,1,1,0,0
+EAR CAVITY
+8,1.000000,0
+Lowerhead
+8,5,1,1,0,0
+,5,1,1,0,0

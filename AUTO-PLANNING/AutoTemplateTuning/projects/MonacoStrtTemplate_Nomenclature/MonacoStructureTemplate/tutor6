@@ -1,0 +1,34 @@
+00021027
+8
+spinal cord
+0,1.000000,0
+tutor6
+9,4,1,1,3,45
+left lung
+0,0.800000,0
+tutor6
+8,3,2,1,1,45
+right lung
+0,0.800000,0
+tutor6
+1,3,3,1,1,45
+left clavical
+0,5.000000,0
+tutor6
+17,5,4,1,2,45
+right clavical
+0,5.000000,0
+tutor6
+20,5,5,1,2,45
+left thyroid
+0,0.900000,0
+tutor6
+10,5,6,1,0,0
+right thyroid
+0,0.900000,0
+tutor6
+15,5,7,1,0,0
+heart
+0,1.750000,0
+tutor6
+7,1,8,1,3,45
