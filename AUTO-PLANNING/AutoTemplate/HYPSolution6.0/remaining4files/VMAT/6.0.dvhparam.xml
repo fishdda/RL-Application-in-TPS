@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<XmlFileIo xmlns:ns="Infrastructure.Persistence.Xml.dll">
+  <Metadata>
+    <Version>1</Version>
+  </Metadata>
+  <Data>
+    <DvhParams>
+      <X>
+        <Percent>100</Percent>
+        <PercentUser>false</PercentUser>
+        <Absolute>6000</Absolute>
+        <AbsoluteUser>false</AbsoluteUser>
+      </X>
+      <Y>
+        <Percent>100</Percent>
+        <PercentUser>false</PercentUser>
+        <Absolute>100000</Absolute>
+        <AbsoluteUser>false</AbsoluteUser>
+      </Y>
+      <Resolution>1</Resolution>
+      <BinWidth>1</BinWidth>
+      <YIsAbsolute>false</YIsAbsolute>
+    </DvhParams>
+  </Data>
+</XmlFileIo>
