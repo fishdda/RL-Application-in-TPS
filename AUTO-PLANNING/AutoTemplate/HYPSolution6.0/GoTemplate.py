@@ -13,33 +13,33 @@ import sys
 ###############   Arguments are passing from Monaco Script   ##################
 ###############################################################################
 
-pt_id = sys.argv[1]
-delivery_method = sys.argv[2]
-fx = sys.argv[3]
-prep_dose=sys.argv[4]
+# pt_id = sys.argv[1]
+# delivery_method = sys.argv[2]
+# fx = sys.argv[3]
+# prep_dose=sys.argv[4]
 
-#LABEL equals 'Site' in Monaco script
-LABEL=sys.argv[5]
+# #LABEL equals 'Site' in Monaco script
+# LABEL=sys.argv[5]
 
-grid_dose = sys.argv[6]
-path = sys.argv[7]
-protocol_xlsx = sys.argv[8]
-PT_path = sys.argv[9]
+# grid_dose = sys.argv[6]
+# path = sys.argv[7]
+# protocol_xlsx = sys.argv[8]
+# PT_path = sys.argv[9]
 
 
 
-#pt_id = '003'
-#delivery_method = 'VMAT'
-#fx = 28
-#prep_dose=61.6
+pt_id = '0019'
+delivery_method = 'VMAT'
+fx = 28
+prep_dose=61.6
 
-#LABEL equals 'Site' in Monaco script
-#LABEL='NPC'
+# LABEL equals 'Site' in Monaco script
+LABEL='NPC'
 
-#grid_dose = 3
-#path = 'C:/autotemplate/HYPSolution6.0'
-#protocol_xlsx = 'C:/autotemplate/XHprotocol.xlsx'
-#PT_path = 'C:/Users/Public/Documents/CMS/FocalData/Installation/Clinic_XH/1~'
+grid_dose = 3
+path = 'C:/autotemplate/HYPSolution6.0'
+protocol_xlsx = 'C:/auto template/XH protocol.xlsx'
+PT_path = 'C:/Users/Public/Documents/CMS/FocalData/Installation/5~Clinic_XH/1~'
 
 
 
