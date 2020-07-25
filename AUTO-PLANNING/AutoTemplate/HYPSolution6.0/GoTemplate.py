@@ -28,7 +28,7 @@ import sys
 
 
 
-pt_id = '0019'
+pt_id = '0024'
 delivery_method = 'VMAT'
 fx = 28
 prep_dose=61.6
