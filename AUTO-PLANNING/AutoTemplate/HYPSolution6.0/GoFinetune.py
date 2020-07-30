@@ -96,3 +96,4 @@ New_IMRT_CONSTRAINT,Old_IMRT_CONSTRAINT = X.MAIN_Tune_TP_60(LABEL,
 IMRT_cosntraints_path = 'C:/autotemplate/IMRTconstraints/' + pt_id + '_' + planname + "_" + iter + '.csv'
 New_IMRT_CONSTRAINT.to_csv(IMRT_cosntraints_path, encoding='utf-8')
 
+path = 'C:/GitFolder/RL-Application-in-TPS/AUTO-PLANNING/AutoTemplateTuning/projects/dose prediction/DATA'
