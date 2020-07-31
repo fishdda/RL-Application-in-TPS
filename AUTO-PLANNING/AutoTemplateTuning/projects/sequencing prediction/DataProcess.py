@@ -1,8 +1,12 @@
 class DATAPROCESS:
+    '''
+    Currently, this class is only specific to VMAT plans 
+    '''
 
     def __init__(self,RAW_DATA_PATH,NEW_DATA_PATH):
         self.RAW_DATA_PATH = RAW_DATA_PATH
         self.NEW_DATA_PATH = NEW_DATA_PATH
+        self.PLAN = {}
 
     def TRANSFER_RAW_DATA(self):
 
@@ -41,7 +45,7 @@ class DATAPROCESS:
 
                 elif dcm.Modality == 'RTPLAN':
 
-                    PLAN = {}
+                    
                     Total_MU = float(dcm.FractionGroupSequence[0].ReferencedBeamSequence[0].BeamMeterset)
                     MLC = np.zeros([160,len(dcm.BeamSequence[0].ControlPointSequence)])
                     JAW = np.zeros([2,len(dcm.BeamSequence[0].ControlPointSequence)])
@@ -59,10 +63,10 @@ class DATAPROCESS:
                         else:
                             MU.append(ktem)
 
-                    PLAN['MU'] = MU
-                    PLAN['Gantry'] = Gantry
-                    PLAN['JAW'] = JAW
-                    PLAN['MLC'] = MLC
+                    self.PLAN['MU'] = MU
+                    self.PLAN['Gantry'] = Gantry
+                    self.PLAN['JAW'] = JAW
+                    self.PLAN['MLC'] = MLC
                     np.save(self.NEW_DATA_PATH + file_nam + '_Plan.npy',PLAN)
 
             CT = np.array(CT_)
@@ -78,7 +82,7 @@ class DATAPROCESS:
 
     def Fluence_Map(self):
         '''
-           Merge all the segment MU for
+           Merge all the segment in one fluence map
         '''
 
 
